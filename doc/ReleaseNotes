@@ -1,3 +1,11 @@
+<subsect id=rn=0.12-1 export>Release 0.12-1
+
+<p>Bugfix release.
+<ul>
+<li>Add configure code to cope with systems which declare mmap but
+fail to declare MAP_FAILED (required by Single Unix and POSIX).
+</ul>
+
 <subsect id=rn-0.12 export>Release 0.12
 
 <p>New and changed functionality:
@@ -18,9 +26,9 @@ locations of marks and the bounding-boxes coerced by struts.</li>
 generalised, and extra library functionality means you'll get this
 right more often.</li>
 
-<li>Refactoring of internal logic handling magnification and unit
-conversions.  This is tremendously error-prone, and difficult to write
-a regression test for, but it produces apparently correct results as
+<li>Refactoring of the internal logic which handles magnification and unit
+conversions.  This is tremendously intricate, and difficult to write
+a regression test for, but it produces correct results as
 far as I've been able to test it.  Be on the lookout for subtle errors.</li>
 
 <li>Various uninitialised-variable bugs caught.</li>
