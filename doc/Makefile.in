@@ -1,22 +1,26 @@
 # dvi2bitmap documentation makefile
 #
-# Relies on STARLINK_SGML_DIR being set correctly.
-#
 # $Id$
 
-DOCTARBALLS=doc.tar-htx doc.tar-latex doc.tar-htxsingle
+# The Jade binary we are to use
+JADE = @JADE@
+# Location of the Starlink SGML kit
+STARLINK_SGML_DIR = @STARLINK_SGML_DIR@
+
+SGML2DOCS = JADE=$(JADE) $(STARLINK_SGML_DIR)/bin/sgml2docs
+
+# Temporarily, don't produce LaTeX documents -- patched Jade not available
+#DOCTARBALLS=doc.tar-htx doc.tar-latex doc.tar-htxsingle
+DOCTARBALLS=doc.tar-htx doc.tar-htxsingle
 
 doc.tar-htx: dvi2bitmap.sgml ReleaseNotes ../VERSION
-	$(STARLINK_SGML_DIR)/bin/sgml2docs --html \
-		--packagedir ssn71.htx --tarball $@ $<
+	$(SGML2DOCS) --html --packagedir ssn71.htx --tarball $@ $<
 
 doc.tar-latex: dvi2bitmap.sgml ReleaseNotes ../VERSION
-	$(STARLINK_SGML_DIR)/bin/sgml2docs --latex \
-		--packagedir ssn71.latex --tarball $@ $<
+	$(SGML2DOCS) --latex --packagedir ssn71.latex --tarball $@ $<
 
 doc.tar-htxsingle: dvi2bitmap.sgml ReleaseNotes ../VERSION
-	$(STARLINK_SGML_DIR)/bin/sgml2docs --htmlsingle \
-		--packagedir ssn71.htxsingle --tarball $@ $<
+	$(SGML2DOCS) --htmlsingle --packagedir ssn71.htxsingle --tarball $@ $<
 
 doc.tar: $(DOCTARBALLS)
 	test -d doc || mkdir doc
