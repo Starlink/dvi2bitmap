@@ -50,6 +50,16 @@ AC_LANG([C])
 
 AC_PATH_PROG(PERL, perl)
 
+AC_PATH_PROGS(JADE, [openjade jade], jade)
+
+AC_ARG_WITH(sgmldir,
+            AS_HELP_STRING([--with-sgmldir],
+                           [location of the SGML Kit tools]),
+            STARLINK_SGML_DIR=$withval,
+            STARLINK_SGML_DIR=$STARLINK/lib)
+AC_CHECK_FILE([$STARLINK_SGML_DIR/dtd/CATALOG],,[STARLINK_SGML_DIR=/UNKNOWN])
+AC_SUBST(STARLINK_SGML_DIR)
+
 dnl   Checks for header files (note unistd.h and stdlib are
 dnl   automatically checked for, and the corresponding HAVE_ macros
 dnl   defined).  Check if we've got sstream; if not, hope we have the
@@ -483,6 +493,6 @@ dnl   output will be placed
 AC_SUBST(DOXYGEN_OUTPUT_DIRECTORY)
 DOXYGEN_OUTPUT_DIRECTORY="doc_libdvi2bitmap"
 
-AC_CONFIG_FILES([Makefile test/Makefile Doxyfile version.h])
+AC_CONFIG_FILES([Makefile test/Makefile doc/Makefile Doxyfile version.h])
 AC_OUTPUT
 
