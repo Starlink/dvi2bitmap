@@ -45,13 +45,15 @@
 #endif
 #include <unistd.h>
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
 #ifdef HAVE_SYS_STAT_H
-#include <sys/types.h>		// for stat
 #include <sys/stat.h>		// for stat
 #endif
 
 #ifdef HAVE_SYS_MMAN_H
-#include <sys/types.h>
 #include <sys/mman.h>
 #endif
 
@@ -243,10 +245,19 @@ bool InputByteStream::bindToFileDescriptor(int fileno,
 #endif	/* ! (HAVE_MMAP && HAVE_SYS_STAT_H) */
 
 	buflen_ = S.st_size;
+        errno = 0;
 	buf_ = static_cast<Byte*>(mmap(0, buflen_,
                                        PROT_READ, MAP_SHARED,
                                        fd_, 0));
-	if (buf_ == MAP_FAILED) {
+#if defined(MAP_FAILED)
+	if (buf_ == MAP_FAILED)
+#else
+        // Some systems have mman.h, but don't declare the MAP_FAILED
+        // macro variable, though it's mandated by POSIX.  In this case,
+        // just rely on errno being set
+        if (errno)
+#endif
+        {
 	    string errmsg = strerror(errno);
 	    throw InputByteStreamError
 		    ("Failed to map file " + fname_ + " (" + errmsg + ")");
