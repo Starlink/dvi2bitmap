@@ -74,7 +74,7 @@ dnl   The alpha cxx compiler currently (v6.0) needs to be invoked with
 dnl   __USE_STD_IOSTREAM defined, so that it uses a standards-conforming 
 dnl   streams library.  See Digital C++ v6.0 manual, section 7.1.2.
 dnl   This is defined by default when the compiler is invoked with
-dnl   `-std strict_ansi', but that's a little harder to arrange in here.
+dnl   '-std strict_ansi', but that is a little harder to arrange in here.
 dnl
 dnl   I don't quite know how, but AC_CANONICAL_HOST appears to be
 dnl   invoked implicitly somewhere above this: if I include it here I
@@ -105,38 +105,47 @@ dnl   use C++ to compile the remaining test programs
 AC_LANG([C++])
 
 dnl   Do we have (standard) <cname> for C libraries, or just <name.h>?
-AC_MSG_CHECKING(whether compiler has <cname> instead of just <name.h>)
-AC_TRY_COMPILE([#include <cstdio>],,
-  AC_DEFINE(HAVE_CSTD_INCLUDE,
-	    1,
-	    [Define as 1 if you DO have <cstdio> headers.  Otherwise,
-	    we use <stdio.h> rather than standard <cstdio>])
-  AC_MSG_RESULT(yes),
-  AC_MSG_RESULT(no))
+AC_CACHE_CHECK([whether compiler has <cname> instead of just <name.h>],
+               [ac_cv_compiler_has_cname],
+               [AC_TRY_COMPILE([#include <cstdio>],,
+                               ac_cv_compiler_has_cname=yes,
+                               ac_cv_compiler_has_cname=no)])
+if test $ac_cv_compiler_has_cname = yes; then
+    AC_DEFINE(HAVE_CSTD_INCLUDE, 1,
+	      [Define as 1 if you DO have <cstdio> headers.  Otherwise,
+	      we use <stdio.h> rather than standard <cstdio>])
+fi
 
 dnl   Are the standard functions in the std namespace?
 dnl   We only need to check <ostream> here, but <iostream> is on more
 dnl   machines (specifically, and irritatingly, <ostream> appears to
 dnl   be missing from egcs-2.91.66)
-AC_MSG_CHECKING(whether standard functions are in namespace std)
-stdprefix=
-AC_TRY_COMPILE([#include <iostream>], [cout << "Hello\n";],
-  AC_MSG_RESULT(no),
-  AC_TRY_COMPILE([#include <iostream>], [std::cout<<"Hello\n";],
-    AC_DEFINE(HAVE_STD_NAMESPACE,
-	      1,
-	      [Related to HAVE_CSTD_INCLUDE: define as 1 if you have
-	      standard functions in the 'std' namespace; that is, if
-	      you need `using namespace std' in order to get to them.
-	      At present, we use this flag to decide if we need to
-	      dump everything into the global namespace; this is not
-	      as elegant as I'd like, but it'll do for now.])
-    stdprefix=std
-    AC_MSG_RESULT(yes),
-    AC_MSG_RESULT(ARGHH -- error compiling)))
+AC_CACHE_CHECK([whether standard functions are in namespace std],
+               [ac_cv_standard_funcs_in_std],
+               [AC_TRY_COMPILE([#include <iostream>], [cout << "Hello\n";],
+                               ac_cv_standard_funcs_in_std=no,
+                               [AC_TRY_COMPILE([#include <iostream>],
+                                               [std::cout<<"Hello\n";],
+                                               ac_cv_standard_funcs_in_std=yes,
+                                               ac_cv_standard_funcs_in_std=error)])])
+case $ac_cv_standard_funcs_in_std in
+    yes) AC_DEFINE(HAVE_STD_NAMESPACE, 1,
+                   [Related to HAVE_CSTD_INCLUDE: define as 1 if you have
+                    standard functions in the 'std' namespace; that is, if
+                    you need 'using namespace std' in order to get to them.
+                    At present, we use this flag to decide if we need to
+                    dump everything into the global namespace; this is not
+                    as elegant as I'd like, but it'll do for now.])
+        stdprefix=std
+        ;;
+    no) stdprefix=
+        ;;
+    error) AC_MSG_WARN([I appear to be unable to compile!])
+        ;;
+esac
 AC_DEFINE_UNQUOTED(STD,
 	 	   $stdprefix,
-		  [Define as `std' (no quotes) if standard functions are in 
+		  [Define as 'std' (no quotes) if standard functions are in 
 		   the std namespace; define as empty otherwise])
 
 
