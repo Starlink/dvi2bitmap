@@ -67,6 +67,12 @@ using std::endl;
 verbosities InputByteStream::verbosity_ = normal;
 unsigned int InputByteStream::default_buffer_length_ = 0;
 
+/**
+ * No-argument constructor creates a new InputByteStream object, but
+ * does not associate it with any source of bytes.  To associate it
+ * with a source, use {@link #bindToFileDescriptor} or the
+ * convenience method {@link #openSourceSpec}.
+ */
 InputByteStream::InputByteStream()
     : eof_(true), fd_(-1), mappedfd_(-1), buf_(0)
 {
