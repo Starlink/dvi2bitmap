@@ -6,7 +6,7 @@ dnl       of the Research Councils
 dnl   See file LICENCE for conditions.
 
 
-AC_INIT(dvi2bitmap, 0.12-1, norman@astro.gla.ac.uk)
+AC_INIT(dvi2bitmap, 0.12-2, norman@astro.gla.ac.uk)
 AM_INIT_AUTOMAKE
 AC_REVISION($Revision$)
 
