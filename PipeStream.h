@@ -23,7 +23,7 @@
  *    program in the file LICENCE.
  *
  *    Author: Norman Gray <norman@astro.gla.ac.uk>
- *    $Id$
+ *    $Id: PipeStream.h,v 1.7 2003/08/06 22:34:16 norman Exp $
  */
 
 #ifndef PIPE_STREAM_HEADER_READ

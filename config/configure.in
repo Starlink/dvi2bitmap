@@ -5,7 +5,7 @@ dnl   Copyright 1999--2002, Particle Physics and Astronomy Research Council.
 dnl   See file LICENCE for conditions.
 
 
-AC_REVISION($Revision$)dnl
+AC_REVISION($Revision: 1.35 $)dnl
 
 
 AC_INIT

@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: DviError.h,v 1.3 2003/02/16 21:48:06 norman Exp $
 
 #ifndef DVIERROR_HEADER_READ
 #define DVIERROR_HEADER_READ 1

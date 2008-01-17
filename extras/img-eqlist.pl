@@ -1,6 +1,6 @@
 #! /usr/bin/perl -w
 
-$RCSID = '$Id$';
+$RCSID = '$Id: img-eqlist.pl,v 1.1 2000/06/13 11:42:02 norman Exp $';
 
 #+
 #  <routinename id=img-eqlist>

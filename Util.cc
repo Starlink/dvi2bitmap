@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: Util.cc,v 1.16 2005/06/04 15:51:04 normang Exp $
 
 
 #include <config.h>
@@ -30,25 +30,29 @@
 #include <iostream>
 
 #ifdef HAVE_CSTD_INCLUDE
-#include <cstdio>
-#include <cctype>
-#include <cerrno>
+#  include <cstdio>
+#  include <cctype>
+#  include <cctype>
+#  if CCTYPE_IN_STD
+using std::isspace;
+using std::isxdigit;
+#  endif
 #else
-#include <stdio.h>
-#include <ctype.h>
-#include <errno.h>
+#  include <stdio.h>
+#  include <ctype.h>
+#  include <ctype.h>
 #endif
 #include <unistd.h>		// this is standard according to single-unix, 
 				// how POSIXy is that?  How C++?
 #include <sys/wait.h>
 //#include <map>
 
-#ifdef HAVE_STD_NAMESPACE
-using std::ostream;
-using std::ends;
-using std::endl;
-using std::cerr;
-#endif
+using STD::ostream;		// following are used several times
+using STD::ends;
+using STD::endl;
+using STD::cerr;
+using STD::strtoul;
+using STD::strncpy;
 
 #include "Util.h"
 #include "stringstream.h"
@@ -199,7 +203,7 @@ char** Util::string_list_to_array(string_list& l)
 	 ci++) {
 	string s = *ci;
 	sl[i] = new char[s.size()+1];
-	strcpy(sl[i], s.c_str());
+	STD::strcpy(sl[i], s.c_str());
 	i++;
     }
     sl[i] = 0;

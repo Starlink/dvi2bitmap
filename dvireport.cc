@@ -5,23 +5,18 @@
 #include <bitset>
 #include <ctype.h>
 
-#ifdef HAVE_STD_NAMESPACE
-using std::cout;
-using std::cerr;
-using std::endl;
-#define STD std
-#else
-#define STD
-#endif
+using STD::cout;
+using STD::cerr;
+using STD::endl;
 
 #include "DviFile.h"
 
 char *progname;
 void Usage();
-void show_position(DviFile *dvi, char* unitlist);
+void show_position(DviFile *dvi, const char* unitlist);
 
 
-void show_position(DviFile *dvi, char* unitlist)
+void show_position(DviFile *dvi, const char* unitlist)
 {
 #define CVTXY(unit)							\
     cout << " "								\
@@ -34,7 +29,7 @@ void show_position(DviFile *dvi, char* unitlist)
 	     DviFile::unit_##unit)					\
 	 << #unit
     
-    for (char *p=unitlist; *p != '\0'; p++) {
+    for (const char *p=unitlist; *p != '\0'; p++) {
 	switch (*p) {
 	  case 'x':
 	    cout << " " << dvi->currH() << "," << dvi->currV()
@@ -88,9 +83,9 @@ int main (int argc, char **argv)
     progname = argv[0];
     if (argc == 1)
 	Usage();
-    char *unitlist = 0;
+    const char *unitlist = 0;
     enum { feature_characters=0, feature_rules,
-	   feature_fonts, feature_specials, };
+	   feature_fonts, feature_specials };
     STD::bitset<8> show_features;
     bool load_fonts = false;
 
@@ -142,7 +137,7 @@ int main (int argc, char **argv)
 	Usage();
 
     if (unitlist == 0)
-	unitlist = "d";
+	unitlist = static_cast<const char*>("d");
     if (show_features.none())
 	show_features.set(feature_characters);
 
@@ -154,7 +149,7 @@ int main (int argc, char **argv)
     } catch (DviError& e) {
 	cerr << "Can't open DVI file " << dviname
 	     << ": " << e.problem() << endl;
-	exit (1);
+	STD::exit (1);
     }
     
     DviFileEvent *ev;
@@ -234,13 +229,13 @@ int main (int argc, char **argv)
     
     delete dvi;
 
-    exit (0);
+    STD::exit (0);
 }
 
 void Usage()
 {
     cerr << "Usage: " << progname
 	 << " [-F] [-s[cfrsA]] [-u[bcdimpx]] dvifile" << endl;
-    exit (1);
+    STD::exit (1);
 }
 

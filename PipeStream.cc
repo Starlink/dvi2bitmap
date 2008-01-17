@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: PipeStream.cc,v 1.16 2006/10/26 15:03:59 normang Exp $
 
 
 #include <config.h>
@@ -49,13 +49,33 @@
 #  include <assert.h>
 #endif
 
-#if HAVE_SIGNAL_H
-// <csignal> is odd -- I don't understand what's there and what's not
-#  include <signal.h>
-#endif
-
 #include <unistd.h>		// this is standard according to single-unix, 
 				// how POSIXy is that?  How C++?
+
+/*
+ * Include <signal.h>, and don't bother with <csignal>, which brings
+ * with it a number of problems related to declarations.  Some of
+ * these are minor ones related to whether functions are or are not in
+ * std, but most are because only a subset of Unix/POSIX signal
+ * handling is part of the C++ standard, and we want to use more.
+ * This whole class is probably fairly Unix-specific, and this doesn't
+ * magically go away if we include <csignal>.
+ * 
+ * If it's available, explicitly include sys/signal.h as well as
+ * <csignal> or <signal.h>.  If we're compiling in a strict-ansi mode,
+ * the compiler may well have carefully avoided including these
+ * signals specific to Unix/POSIX, which are, of course, precisely the
+ * ones we're hoping to use.
+ *
+ * Include <sys/signal.h> first: if <signal.h> includes it for us,
+ * then it will probably define sentinels which will stop us including
+ * it a second time.
+ */
+#if HAVE_SYS_SIGNAL_H
+#  include <sys/signal.h>
+#endif
+#include <signal.h>
+
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>
 #endif
@@ -66,12 +86,10 @@
 
 #include <map>
 
-#ifdef HAVE_STD_NAMESPACE
-using std::ostream;
-using std::ends;
-using std::endl;
-using std::cerr;
-#endif
+using STD::ostream;
+using STD::ends;
+using STD::endl;
+using STD::cerr;
 
 #include <stringstream.h>
 
@@ -98,7 +116,7 @@ namespace PipeStreamSignalHandling {
     void expectAnother() throw (InputByteStreamError);
     extern "C" void childcatcher(int);
     extern "C" void alarmcatcher(int);
-};
+}
 
 
 /**
@@ -230,7 +248,7 @@ PipeStream::PipeStream (string cmd, string envs)
 	// This is an error
         if (getVerbosity() > normal)
             cerr << "Error executing " << argv[0]
-                 << ": " << strerror(errno) << endl;
+                 << ": " << STD::strerror(errno) << endl;
 
         // Children should exit with _exit rather than exit.  See, eg.,
         // <http://www.erlenstar.demon.co.uk/unix/faq_toc.html#TOC6> 
@@ -336,7 +354,7 @@ void PipeStream::close(void)
 		    if (getVerbosity() > normal)
 			cerr << "PipeStream::close: can't send signal "
 			     << sigtosend << " to process " << pid_
-			     << " (" << strerror(errno) << ")"
+			     << " (" << STD::strerror(errno) << ")"
 			     << endl;
 		}
 
@@ -353,20 +371,38 @@ void PipeStream::close(void)
 }
 
 /**
- * Returns the status of the command at the end of the pipe.  Since
+ * Returns the exit status of the command at the end of the pipe.  Since
  * this is only available after the process has completed, this 
  * invokes {@link #close} on the stream first.  Thus you should not
  * invoke this method until after you have extracted all of the
  * command's output that you want.  If <code>close</code> is unable
  * to terminate the process for some reason, this returns -1.
  *
+ * <p>If the process exited normally, return the exit status of the command,
+ * as opposed to the raw exit status returned from the process, since this is
+ * more useful than the raw status with assorted other status information
+ * concerning anomalous exits.  This status is non-negative.  If the process
+ * did not exit normally, then return the negative of the raw status
+ * information, which we assert will be less than zero.
+ *
+ * <p>See waitpid(2) for details.
+ *
  * @return the exit status of the process.
  */
 int PipeStream::getTerminationStatus(void)
 {
+    int retval;
+
     close();
-    return pipe_status_;
-};
+    if (WIFEXITED(pipe_status_)) {
+        retval = WEXITSTATUS(pipe_status_);
+        assert(retval >= 0);
+    } else {
+        retval = -pipe_status_;
+        assert(retval < 0);     // we are correct about this, aren't we?
+    }
+    return retval;
+}
 
 /**
  * Returns the contents of the stream as a string.  If some of the

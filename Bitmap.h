@@ -1,5 +1,6 @@
 //    This file is part of dvi2bitmap.
 //    Copyright 1999--2002, Council for the Central Laboratory of the Research Councils
+//    Copyright 2003--5, Norman Gray
 //    
 //    This program is part of the Starlink Software Distribution: see
 //    http://www.starlink.ac.uk 
@@ -22,13 +23,15 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: Bitmap.h,v 1.33 2005/12/08 09:58:00 normang Exp $
 
 
 #ifndef BITMAP_HEADER_READ
 #define BITMAP_HEADER_READ 1
 
 #include "Byte.h"
+//#include "DviFile.h"            /* needed by BitmapMark */
+#include "DviFilePosition.h"
 #include "DviError.h"
 #include "verbosity.h"
 
@@ -124,6 +127,7 @@ class Bitmap {
         logBitmapPrefix_ = prefix;
     };
 
+#if 0
     /**
      * Represents a location within the bitmap.  Coordinates
      * <code>x</code> and <code>y</code> are relative to the top-left
@@ -133,11 +137,23 @@ class Bitmap {
      * <p>See {@link #mark} and {@link #getMark}.
      */
     class BitmapMark {
-    public:
+    private:
         double x, y;
+        DviFile* dvif;
+    public:
+        BitmapMark(DviFile*, double x_sp, double y_sp);
+        double getX(const DviFile::DviUnits u);
+        double getY(const DviFile::DviUnits u);
+        void shift(double dx, double dy, DviFile::DviUnits u);
+        void scale(double factor);
+        // make a static copy
+        BitmapMark* copy();
     };
-    void mark(const double x, const double y);
+    void mark(DviFile*, const double x, const double y);
     BitmapMark* getMark();
+#endif
+    void mark(DviFilePosition*);
+    DviFilePosition* getMark();
 
     /** Iterator class */
     class const_iterator 
@@ -193,8 +209,10 @@ class Bitmap {
     int cropL, cropR, cropT, cropB;
     /** Flag is set true when the bitmap is frozen */
     bool cropped_;
+    /** Flag is set true when the bitmap is scaled */
+    bool scaled_;
     /** Location of mark */
-    BitmapMark* mark_;
+    DviFilePosition* mark_;
     /** When cropping, set margins.  Indexed by enumerator Bitmap::Margin. */
     static int  cropMarginDefault[4];
     int  cropMargin[4];

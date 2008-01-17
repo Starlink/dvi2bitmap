@@ -15,7 +15,7 @@
 # by mktexpk (or something like that, mmm?).  Running the test script
 # again usually works.
 #
-# $Id$
+# $Id: test-font-gen.sh,v 1.20 2003/07/25 11:43:29 norman Exp $
 
 if [ $# -lt 2 ]; then
     echo "Usage: $0 path-to-dvi2bitmap test-DVI-file [output-file-root]"

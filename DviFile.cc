@@ -22,13 +22,12 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: DviFile.cc,v 1.72 2005/12/08 09:34:21 normang Exp $
 
 
 #include <config.h>
 
 #include <iostream>
-#include <assert.h>
 #include <string>
 
 #include <unistd.h>		// for STDIN_FILENO
@@ -37,15 +36,20 @@
 #endif
 
 #ifdef HAVE_CSTD_INCLUDE
-#include <cmath>		// for fabs()
+#  include <cmath>		// for fabs()
+#  include <cassert>
+#  include <cctype>		// for isprint
+#  if CCTYPE_IN_STD
+using std::isprint;
+#  endif
 #else
-#include <math.h>
+#  include <math.h>
+#  include <assert.h>
+#  include <ctype.h>
 #endif
 
-#ifdef HAVE_STD_NAMESPACE
-using std::cerr;
-using std::endl;
-#endif
+using STD::cerr;
+using STD::endl;
 
 #include <DviFile.h>
 #include <PkFont.h>
@@ -653,10 +657,10 @@ const PkFont* DviFile::getFallbackFont(const PkFont* desired)
 	const PkFont* f = *ci;
 	if (desired == 0)
 	    return f;
-	double diff = fabs(desired->designSize() - f->designSize());
+	double diff = STD::fabs(desired->designSize() - f->designSize());
 	if (diff == 0.0)
 	    return f;
-	if (diff < fabs(desired->designSize() - best_so_far->designSize()))
+	if (diff < STD::fabs(desired->designSize()-best_so_far->designSize()))
 	    best_so_far = f;
     }
     return best_so_far;
@@ -766,7 +770,7 @@ int DviFile::pixel_round(int dp)
  * <p>The conversions to DVIunits and pixels are not universal, but
  * are instead dependent on a particular DVI file; if you wish to
  * convert to either of these units, you must supply a reference to a
- * DVI file.  If not, and argument here is ignored, and may be zero
+ * DVI file.  If not, any argument here is ignored, and may be zero
  * (the default).
  *
  * @param sp the length in scaled points
@@ -840,7 +844,7 @@ double DviFile::convertFromScaledPoints(int sp, DviUnits units, DviFile *dvif)
  * <p>The conversions from DVIunits and pixels are not universal, but
  * are instead dependent on a particular DVI file; if you wish to
  * convert from either of these units, you must supply a reference to a
- * DVI file.  If not, and argument here is ignored, and may be zero
+ * DVI file.  If not, any argument here is ignored, and may be zero
  * (the default).
  *
  * @param length the length to be converted
@@ -854,8 +858,8 @@ double DviFile::convertFromScaledPoints(int sp, DviUnits units, DviFile *dvif)
  * @see #convertFromScaledPoints
  * @see #convertUnits
  */
-double DviFile::convertToScaledPoints(double length, DviUnits units,
-				      DviFile *dvif)
+int DviFile::convertToScaledPoints(double length, DviUnits units,
+                                   DviFile *dvif)
     throw (DviError)
 {
     double ans;
@@ -904,7 +908,7 @@ double DviFile::convertToScaledPoints(double length, DviUnits units,
       default:
 	assert(false);
     }
-    return ans;
+    return static_cast<int>(ans+0.5);
 }
 
 /**
@@ -913,7 +917,7 @@ double DviFile::convertToScaledPoints(double length, DviUnits units,
  * <p>The conversions to DVIunits and pixels are not universal, but
  * are instead dependent on a particular DVI file; if you wish to
  * convert to either of these units, you must supply a reference to a
- * DVI file.  If not, and argument here is ignored, and may be zero
+ * DVI file.  If not, any argument here is ignored, and may be zero
  * (the default).
  *
  * @param length the length to be converted
@@ -938,9 +942,7 @@ double DviFile::convertUnits(double length,
 	return length;
     else
 	return convertFromScaledPoints
-		(static_cast<int>(convertToScaledPoints(length,
-							from_units,
-							dvif)),
+		(convertToScaledPoints(length, from_units, dvif),
 		 to_units,
 		 dvif);
 }
@@ -1007,6 +1009,7 @@ string DviFile::unitString(DviFile::DviUnits unit)
     }
     assert(false);		// shouldn't happen -- the above
 				// should be all possible unit values
+    return "";			// Keeps the compiler happy
 }
 
 
@@ -1129,7 +1132,7 @@ void DviFile::updateV_ (int vup)
 	range = 0;
     else
 	range = 0.8 * current_font_->quad();
-    if (abs(vup) < range)
+    if (STD::abs(vup) < range)
 	vv_ += pixel_round(vup);
     else
 	vv_ = pixel_round(v_ + vup);

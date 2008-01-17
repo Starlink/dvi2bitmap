@@ -23,7 +23,7 @@
  *    program in the file LICENCE.
  *
  *    Author: Norman Gray <norman@astro.gla.ac.uk>
- *    $Id$
+ *    $Id: FileByteStream.h,v 1.2 2003/08/22 14:05:43 norman Exp $
  */
 
 

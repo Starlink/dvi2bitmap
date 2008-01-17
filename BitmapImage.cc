@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: BitmapImage.cc,v 1.21 2003/02/17 16:11:29 norman Exp $
 
 
 // FIXME: I think I should make this class a subclass of Bitmap, so it can

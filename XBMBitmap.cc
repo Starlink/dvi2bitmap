@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: XBMBitmap.cc,v 1.16 2005/06/04 15:51:04 normang Exp $
 
 
 #include <config.h>
@@ -32,13 +32,18 @@
 
 //#include <iostream>		// debug code writes to cerr
 
-#ifdef HAVE_CSTD_INCLUDE
-#include <cstdio>
-#include <cctype>
+#if HAVE_CSTD_INCLUDE
+#  include <cstdio>
+#  include <cctype>
+#  if CCTYPE_IN_STD
+   using std::isalnum;
+#  endif
 #else
-#include <stdio.h>
-#include <ctype.h>
+#  include <stdio.h>
+#  include <ctype.h>
 #endif
+
+
 
 XBMBitmap::XBMBitmap (const int w, const int h)
     : BitmapImage (w, h)

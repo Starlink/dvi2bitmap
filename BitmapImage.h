@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: BitmapImage.h,v 1.16 2003/02/16 21:48:06 norman Exp $
 
 
 #ifndef BITMAPIMAGE_HEADER_READ

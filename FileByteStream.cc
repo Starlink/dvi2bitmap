@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: FileByteStream.cc,v 1.9 2005/06/04 15:51:04 normang Exp $
 
 
 #include <config.h>
@@ -45,10 +45,8 @@
 #include <string.h>
 #endif
 
-#ifdef HAVE_STD_NAMESPACE
-using std::cerr;
-using std::endl;
-#endif
+using STD::cerr;
+using STD::endl;
 
 
 /**
@@ -106,7 +104,7 @@ FileByteStream::FileByteStream(string& filename,
     struct stat S;
     if (fstat (newfd, &S))
     {
-	string errstr = strerror (errno);
+	string errstr = STD::strerror (errno);
 	throw InputByteStreamError ("Can't stat open file (" + errstr + ")");
     }
     filesize_ = S.st_size;
@@ -146,7 +144,7 @@ void FileByteStream::seek(int pos)
 	// no need to reload buffer
     } else {
 	if (lseek(fd, offset, SEEK_SET) < 0) {
-	    string errmsg = strerror(errno);
+	    string errmsg = STD::strerror(errno);
 	    throw InputByteStreamError("Can't seek (" + errmsg + ")");
 	}
 	if (getVerbosity() > normal)

@@ -7,18 +7,16 @@
 #include <DviFile.h>
 
 #include <iostream>
-#if HAVE_STD_NAMESPACE
-//using std::cout;
-using std::cerr;
-using std::endl;
-//using std::ends;
-#endif
 
 #if HAVE_CSTD_INCLUDE
 #include <cmath>
 #else
 #include <math.h>
 #endif
+
+using STD::cerr;
+using STD::endl;
+using STD::fabs;
 
 // could do with boosting accuracy, but that would involve being
 // cleverer in convertUnits
@@ -214,6 +212,6 @@ int main(int argc, char** argv)
 	cerr << "Test threw DviError: " << e.problem() << endl;
     }
 
-    exit(nerrors);
+    STD::exit(nerrors);
 }
 

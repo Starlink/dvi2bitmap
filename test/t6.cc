@@ -10,26 +10,35 @@
 #include <iostream>
 
 #if HAVE_CSTD_INCLUDE
-#include <cstdio>
-#include <cstdlib>
-#include <cerrno>
+#  include <cstdio>
+#  include <cstdlib>
+#  include <cerrno>
 #else
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
+#  include <stdio.h>
+#  include <stdlib.h>
+#  include <errno.h>
 #endif
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <sys/stat.h>		// for mkfifo
 
-
-#if HAVE_STD_NAMESPACE
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::ends;
+#if HAVE_SYS_ERRNO_H
+/* If it's available, explicitly include sys/errno.h as well as
+ * <cerrno> or <errno.h> above.  If we're compiling in a strict-ansi
+ * mode, the compiler may well have carefully avoided defining errors
+ * which are specific to Unix/POSIX, which are, of course, precisely
+ * the ones we're hoping to use.
+ */
+#  include <sys/errno.h>
 #endif
+
+
+using STD::cout;		// we use these ones a lot
+using STD::cerr;
+using STD::endl;
+using STD::ends;
+using STD::strerror;
 
 #include <string>
 
@@ -50,6 +59,13 @@ int do_stream_tests();
 int do_pipe_tests();
 void Usage();
 
+// clear() method is standard, but not all compilers support it
+#if HAVE_STRING_CLEAR
+#  define CLEARSTRING(s) (s).clear()
+#else
+// Let's hope we have erase() (following is the standard's def'n of clear())
+#  define CLEARSTRING(s) (s).erase((s).begin(), (s).end())
+#endif
 
 void compareStrings(string expected, string actual, int& nfails)
 {
@@ -91,6 +107,7 @@ string report_on_status(int status)
     return SS_STRING(res);
 }
 
+
 int exercise_IBS(InputByteStream& IBS)
 {
     string teststring;
@@ -106,21 +123,21 @@ int exercise_IBS(InputByteStream& IBS)
 	checkEOF(IBS);
 	compareStrings("!000:56789", teststring, nfails);
 	
-	teststring.clear();
+	CLEARSTRING(teststring);
 	IBS.skip(85);		// now at pos 95
 	for (i=0; i<10; i++)
 	    teststring += IBS.getByte(); // read over buffer end
 	checkEOF(IBS);
 	compareStrings("56789!100:", teststring, nfails);
 
-	teststring.clear();
+	CLEARSTRING(teststring);
 	IBS.skip(45);		// skip to buffer end
 	for (i=0; i<10; i++)
 	    teststring += IBS.getByte();
 	checkEOF(IBS);
 	compareStrings("!150:56789", teststring, nfails);
 
-	teststring.clear();
+	CLEARSTRING(teststring);
 	IBS.skip(35);		// now at pos 195
 	block = IBS.getBlock(10);
 	for (i=0; i<10; i++)
@@ -128,7 +145,7 @@ int exercise_IBS(InputByteStream& IBS)
 	checkEOF(IBS);
 	compareStrings("56789!200:", teststring, nfails);
 	
-	teststring.clear();
+	CLEARSTRING(teststring);
 	IBS.skip(5);		// to 210
 	block = IBS.getBlock(10); // to 220
 	for (i=0; i<10; i++)
@@ -136,7 +153,7 @@ int exercise_IBS(InputByteStream& IBS)
 	checkEOF(IBS);
 	compareStrings("!210:56789", teststring, nfails);
 
-	teststring.clear();
+	CLEARSTRING(teststring);
 	block = IBS.getBlock(120); // block bigger than bufsize; to 340
 	checkEOF(IBS);
 	for (i=0; i<10; i++)
@@ -144,7 +161,7 @@ int exercise_IBS(InputByteStream& IBS)
 	compareStrings("!220:56789", teststring, nfails);
 	
     
-	teststring.clear();
+	CLEARSTRING(teststring);
 	IBS.skip(55);		// to 395
 	block = IBS.getBlock(10); // to 405
 	checkEOF(IBS);
@@ -152,13 +169,13 @@ int exercise_IBS(InputByteStream& IBS)
 	    teststring += *block++;
 	compareStrings("56789!400:", teststring, nfails);
 
-	teststring.clear();
+	CLEARSTRING(teststring);
 	for (i=0; i<10; i++)
 	    teststring += IBS.getByte(); // to 415
 	checkEOF(IBS);
 	compareStrings("56789!410:", teststring, nfails);
 
-	teststring.clear();
+	CLEARSTRING(teststring);
 	IBS.skip(75);		// to 490
 	for (i=0; i<10; i++)
 	    teststring += IBS.getByte();
@@ -180,21 +197,21 @@ int exercise_FBS(FileByteStream& FBS)
     const Byte* block;
 
     try {
-	teststring.clear();
+	CLEARSTRING(teststring);
 	FBS.seek(0);
 	for (i=0; i<10; i++)
 	    teststring += FBS.getByte();
 	checkEOF(FBS);
 	compareStrings("!000:56789", teststring, nfails);
 
-	teststring.clear();
+	CLEARSTRING(teststring);
 	FBS.seek(45);
 	for (i=0; i<10; i++)
 	    teststring += FBS.getByte();
 	checkEOF(FBS);
 	compareStrings("56789!050:", teststring, nfails);
 
-	teststring.clear();
+	CLEARSTRING(teststring);
 	FBS.seek(40);
 	block = FBS.getBlock(20);
 	checkEOF(FBS);
@@ -202,14 +219,14 @@ int exercise_FBS(FileByteStream& FBS)
 	    teststring += *block++;
 	compareStrings("!040:56789!050:56789", teststring, nfails);
 
-	teststring.clear();
+	CLEARSTRING(teststring);
 	FBS.seek(-10);
         block = FBS.getBlock(10);
         for (i=0; i<10; i++)
             teststring += *block++;
 	compareStrings("!end:56789", teststring, nfails);
 	
-	teststring.clear();
+	CLEARSTRING(teststring);
 	FBS.seek(-10);
         for (i=0; i<10; i++)
             teststring += FBS.getByte();
@@ -225,7 +242,7 @@ int exercise_FBS(FileByteStream& FBS)
 	    nfails++;
 	}
 
-	teststring.clear();
+	CLEARSTRING(teststring);
 	FBS.seek(0);
 	for (i=0; i<10; i++)
 	    teststring += FBS.getByte();
@@ -278,6 +295,33 @@ int do_stream_tests()
     // so we can test skipping over a buffer margin
     
     try {
+	{
+	    struct stat S;
+	    if (stat(fn.c_str(), &S) != 0) {
+		// File does not exist
+		int pid = fork();
+		if (pid < 0) {
+		    cerr << "Can't fork!" << strerror(errno) << endl;
+		    STD::exit(1);	// give up immediately
+		} else if (pid == 0) {
+		    // child
+		    execl("./t6.test",
+			  "./t6.test",
+			  "-o", fn.c_str(),
+			  "-g", "500",
+			  0);
+		    cerr << "Oh-oh: couldn't exec in child of "
+			 << getppid() << ": " << strerror(errno) << endl;
+		    STD::exit(1);
+		} else {
+		    // parent
+		    int status;
+		    waitpid(pid, &status, 0);
+		    cerr << "Generated data file " << fn << endl;
+		}
+	    }
+	}
+	
 	{
             int tfails = 0;
 	    // Test 1 -- reading without preloading
@@ -405,7 +449,7 @@ int do_stream_tests()
 			  0);
                     cerr << "Oh-oh: couldn't exec in child of "
                          << getppid() << ": " << strerror(errno) << endl;
-                    exit(1);
+                    STD::exit(1);
 		} else {
 		    // parent
 		    InputByteStream IBS(PIPE_NAME);
@@ -432,6 +476,13 @@ int do_stream_tests()
 
     return nfails;
 }
+
+#if HAVE_SETENV && !HAVE_DECL_SETENV
+extern "C" int setenv(const char* name, const char *value, int overwrite);
+#endif
+#if HAVE_PUTENV && !HAVE_DECL_PUTENV
+extern "C" int putenv(const char* string);
+#endif
 
 int do_pipe_tests()
 {
@@ -504,6 +555,14 @@ int do_pipe_tests()
         
         try {
             string cmd = "./t6.test -e LOGNAME HOME T TT";
+#if HAVE_SETENV
+            setenv("TT", "test", 1);
+#elif HAVE_PUTENV	    
+            putenv((char*)"TT=test");
+#else
+#  error "Can't set environment variables"
+#endif
+	    /*
 #if defined(HAVE_SETENV) && HAVE_DECL_SETENV
             setenv("TT", "test", 1);
 #elif defined(HAVE_PUTENV) && HAVE_DECL_PUTENV
@@ -517,6 +576,7 @@ int do_pipe_tests()
 #else
 #error "Can't set environment variables"
 #endif
+	    */
             string envs = "LOGNAME=blarfl HOME=blarfl T=t + LOGNAME=you TT + LOGNAME=me";
             string expected = "LOGNAME=me!HOME=";
             char* h = getenv("HOME");
@@ -589,7 +649,7 @@ int main (int argc, char **argv)
 		    Usage();
                 if ((output = fopen(*argv, "w")) == 0) {
                     fprintf(stderr, "Can't open file %s to write\n", *argv);
-                    exit (1);
+                    STD::exit (1);
 		}
                 // Sleep for a moment, in case the output file is a
                 // FIFO (that is, we are being called by the code
@@ -620,7 +680,7 @@ int main (int argc, char **argv)
 	{
 	    if (argc == 0)
 		Usage();
-	    int n = strtol(*argv, 0, 10);
+	    int n = STD::strtol(*argv, 0, 10);
 	    if (n <= 0)
 		Usage();
 	    generate_data(n, output);
@@ -640,13 +700,13 @@ int main (int argc, char **argv)
     if (verbosity > normal)
 	cerr << "Total fails: " << totalfails << endl;
 
-    exit (totalfails);
+    STD::exit (totalfails);
 }
 
 void Usage(void)
 {
     cerr << "Usage: " << progname << " [-o output] [-g num] [-e var...]"
 	 << endl;
-    exit (1);
+    STD::exit (1);
 }
 

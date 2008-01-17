@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: XBMBitmap.h,v 1.7 2003/02/16 21:48:06 norman Exp $
 
 
 #ifndef XBMBITMAP_HEADER_READ

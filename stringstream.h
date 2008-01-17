@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: stringstream.h,v 1.7 2004/11/04 20:32:28 nxg Exp $
 
 #ifndef STRINGSTREAM_H_LOADED
 #define STRINGSTREAM_H_LOADED 1
@@ -36,9 +36,7 @@
 #define SS_C_STR(s) (s).str().c_str()
 #define SS_STRING(s) (s).str()
 
-#ifdef HAVE_STD_NAMESPACE
-using std::ostringstream;
-#endif
+using STD::ostringstream;
 
 #elif HAVE_STRSTREAM
 
@@ -48,10 +46,8 @@ using std::ostringstream;
 /* Add the end-of-string to the stringbuf and convert it to a string */
 #define SS_STRING(s) ((s)<<ends,string((s).str()))
 
-#ifdef HAVE_STD_NAMESPACE
-using std::ostrstream;
-using std::ends;
-#endif
+using STD::ostrstream;
+using STD::ends;
 
 #else
 #error "Neither HAVE_SSTREAM nor HAVE_STRSTREAM is defined!"

@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: verbosity.h,v 1.4 2003/06/15 17:55:47 norman Exp $
 
 
 #ifndef VERBOSITY_HEADER_READ

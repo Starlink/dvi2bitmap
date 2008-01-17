@@ -2,7 +2,7 @@
 /*
  * GIFEncode.cc - GIF image compression interface.
  *
- * $Id$
+ * $Id: GIFBitmap.cc,v 1.21 2004/11/04 20:32:28 nxg Exp $
  *
  * This file is based on ppmtogif.c program which is part of the
  * pbmplus distribution.
@@ -44,17 +44,15 @@
 #include <math.h>		// for floor() and ceil() in iround
 #endif
 
-#ifdef HAVE_STD_NAMESPACE
-using std::fopen;
-using std::fwrite;
-using std::fputc;
-using std::fclose;
-using std::fflush;
-using std::fprintf;
-using std::floor;
-using std::ceil;
-using std::sqrt;
-#endif
+using STD::fopen;
+using STD::fwrite;
+using STD::fputc;
+using STD::fclose;
+using STD::fflush;
+using STD::fprintf;
+using STD::floor;
+using STD::ceil;
+using STD::sqrt;
 
 const unsigned long GIFBitmap::masks[] 
 	= { 0x0000,

@@ -1,20 +1,9 @@
 #! /bin/sh -
-
-# Run this script in a freshly checked-out directory to bring the
-# system to the point where you can just type ./configure;make
+# Bootstrap dvi2bitmap
 #
-# The configuration script here work with automake 1.7.5 and autoconf
-# 2.57, and probably not much that's significantly older than those.
+# Invoke as just
+#
+#   % ./bootstrap
+#
 
-echo "autoheader..."
-  autoheader || exit 1
-echo "aclocal..."
-  aclocal || exit 1
-echo "libtoolize..."
-  libtoolize || exit 1
-echo "automake --add-missing..."
-  automake --add-missing || exit 1
-echo "autoconf..."
-  autoconf || exit 1
-
-exit 0
+autoreconf --install --symlink || { echo "Bootstrap failed!"; exit 1; }

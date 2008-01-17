@@ -1,37 +1,33 @@
 dnl
 dnl   Configure script for dvi2bitmap
 dnl
-dnl   Copyright 1999--2003, Council of the Central Laboratory
+dnl   Copyright 1999--2005, Council of the Central Laboratory
 dnl       of the Research Councils
 dnl   See file LICENCE for conditions.
 
 
-AC_INIT(dvi2bitmap, 0.12-2, norman@astro.gla.ac.uk)
-AM_INIT_AUTOMAKE
-AC_REVISION($Revision$)
+AC_INIT(dvi2bitmap, 0.14-alpha, norman@astro.gla.ac.uk)
+AC_SUBST(RELEASEDATE, "2005 ???")
+# Version-info specifications.  See SSN/78 for guidelines, and update the table
+# below for ANY change of version number.  See also the libtool documentation,
+# section `Libtool's versioning system'.
+#
+# Release    libdvi2bitmap.la
+#  0.13b1         1:0:0
+#  0.13b2         1:1:0
+#  0.13b3	  1:2:0
+#  0.13		  1:3:0
+#  0.14b???       1:4:0
+AC_SUBST(libdvi2bitmap_la_version_info, 1:4:0)
 
-dnl   The syntax in here is for autoconf 2.50 and later
-AC_PREREQ(2.50)
+
+
+AM_INIT_AUTOMAKE
+AC_REVISION($Revision: 1.40 $)
+
+AC_PREREQ(2.59)
 
 AC_CONFIG_SRCDIR([dvi2bitmap.cc])
-
-dnl   Say where the install-sh, config.guess and config.sub scripts
-dnl   are.
-dnl
-dnl   Hmm, something appears to go wrong with this: autoconf 2.57
-dnl   appears to generate a ./configure which doesn't look in the
-dnl   specified directory.  Also, some automake list messages,
-dnl   including the thread that contains
-dnl   <http://mail.gnu.org/archive/html/automake/2002-09/msg00167.html>
-dnl   suggest that libtool 1.4.3 fails to work with configure.ac
-dnl   scripts that specify AC_CONFIG_AUX_DIR.  Therefore, though it's
-dnl   slightly ugly, just leave all the configure junk in the
-dnl   top-level directory.
-dnl AC_CONFIG_AUX_DIR(config)
-
-dnl   Use a config file (the list of settings is getting too long)
-AC_CONFIG_HEADER(config.h)
-
 
 dnl   Checks for programs.
 dnl   By giving arguments (CC cxx c++ g++) and (cc gcc egcs), here, we
@@ -44,39 +40,99 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_LIBTOOL
 
+dnl dnl   Macro AS_HELP_STRING is defined in 2.59, but not earlier.
+dnl m4_ifdef([AS_HELP_STRING],,m4_define([AS_HELP_STRING],
+dnl [m4_pushdef([AS_Prefix], m4_default([$3], [                          ]))dnl
+dnl m4_pushdef([AS_Prefix_Format],
+dnl            [  %-]m4_eval(m4_len(AS_Prefix) - 3)[s ])dnl [  %-23s ]
+dnl m4_text_wrap([$2], AS_Prefix, m4_format(AS_Prefix_Format, [$1]))dnl
+dnl m4_popdef([AS_Prefix_Format])dnl
+dnl m4_popdef([AS_Prefix])dnl
+dnl ]))
+
+
+
+
 dnl  Use C to compile the AC_CHECK_FUNCS tests (using C++ can cause
 dnl  spurious linking errors on, for example, Solaris)
 AC_LANG([C])
 
 AC_PATH_PROG(PERL, perl)
+AC_PATH_PROG(TEX, tex, NO_TEX)
+dnl  Test for doxygen; code here and in Makefile.am tests for
+dnl  equality with 'NO_DOXYGEN'
+AC_PATH_PROG(DOXYGEN, doxygen, NO_DOXYGEN)
+if test "$DOXYGEN" = NO_DOXYGEN; then
+    AC_MSG_NOTICE([Couldn't find Doxygen -- I'll just create a stub library document.  Doxygen's good though: you can get it from www.doxygen.org])
+fi
 
-AC_PATH_PROGS(JADE, [openjade jade], jade)
+dnl   The documentation is built using the Starlink SGMLKit, and we
+dnl   need to find this.  We can't do it automatically.  FIXME: this
+dnl   is ugly, but might need a rewrite of the documentation before
+dnl   it can be fixed.
+AC_PATH_PROGS(SGML2DOCS, sgml2docs, NOSGML2DOCS)
+AC_PATH_PROGS(JADE, [openjade jade], NOJADE)
+AC_PATH_PROGS(SGMLNORM, [osgmlnorm sgmlnorm], NOSGMLNORM)
 
 AC_ARG_WITH(sgmldir,
-            AS_HELP_STRING([--with-sgmldir],
-                           [location of the SGML Kit tools]),
-            STARLINK_SGML_DIR=$withval,
-            STARLINK_SGML_DIR=$STARLINK/lib)
+    AS_HELP_STRING([--with-sgmldir],
+                   [location of the SGML Kit tools (maintainer only)]),
+    STARLINK_SGML_DIR=$withval,
+   [if test "$SGML2DOCS" != NOSGML2DOCS; then
+        STARLINK_SGML_DIR=`echo $SGML2DOCS | sed s,/bin/sgmldocs,/lib/sgmlkit,`
+    else
+        STARLINK_SGML_DIR=$STARLINK/lib
+    fi])
 AC_CHECK_FILE([$STARLINK_SGML_DIR/dtd/CATALOG],,[STARLINK_SGML_DIR=/UNKNOWN])
 AC_SUBST(STARLINK_SGML_DIR)
+AC_PATH_PROG(SGML2DOCS, sgml2docs, NOSGML2DOCS,
+    [$STARLINK_SGML_DIR/../../bin:$PATH])
 
 dnl   Checks for header files (note unistd.h and stdlib are
 dnl   automatically checked for, and the corresponding HAVE_ macros
-dnl   defined).  Check if we've got sstream; if not, hope we have the
-dnl   older strstream.
+dnl   defined).
 AC_HEADER_STDC
+AC_CHECK_HEADERS([assert.h fcntl.h signal.h sys/signal.h sys/errno.h sys/stat.h sys/wait.h sys/time.h sys/mman.h sys/types.h])
 AC_HEADER_STAT
-AC_CHECK_HEADERS(assert.h fcntl.h signal.h sys/stat.h sys/wait.h sys/time.h sys/mman.h)
 
 dnl   Checks for library functions
-AC_FUNC_MMAP
 AC_CHECK_FUNCS(pipe snprintf setenv putenv alarm setitimer)
-
+AC_FUNC_MMAP
 
 
 dnl   Now switch to doing header checks with C++, for those headers
-dnl   which are specific to C++
+dnl   which are specific to C++.
 AC_LANG([C++])
+
+dnl   Check for the type of mmap arguments.  POSIX says this should be void*,
+dnl   but Solaris CC seems to want it to be caddr_t=char*.
+AC_MSG_CHECKING([the type of mmap pointers])
+for mman_t in 'void*' caddr_t NONE
+do
+  AC_TRY_COMPILE([
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#if HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+], [
+int status;
+$mman_t ptr;
+status = munmap(ptr, 0);
+],
+  break)
+done
+if test "$mman_t" = NONE; then
+  AC_MSG_RESULT([void* (I hope)])
+  mman_t='void*'
+else
+  AC_MSG_RESULT($mman_t)
+fi
+AC_DEFINE_UNQUOTED(MMAP_TYPE, $mman_t,
+                   [Define as the type of the first argument to munmap])
+
+dnl   Check if we've got sstream; if not, hope we have the older strstream.
 AC_CHECK_HEADERS(sstream strstream cassert)
 
 dnl   What type of system are we on?
@@ -84,7 +140,8 @@ dnl   The alpha cxx compiler currently (v6.0) needs to be invoked with
 dnl   __USE_STD_IOSTREAM defined, so that it uses a standards-conforming 
 dnl   streams library.  See Digital C++ v6.0 manual, section 7.1.2.
 dnl   This is defined by default when the compiler is invoked with
-dnl   '-std strict_ansi', but that is a little harder to arrange in here.
+dnl   '-std strict_ansi', but that's more drastic than we want to
+dnl   have on by default.
 dnl
 dnl   I don't quite know how, but AC_CANONICAL_HOST appears to be
 dnl   invoked implicitly somewhere above this: if I include it here I
@@ -131,32 +188,109 @@ dnl   We only need to check <ostream> here, but <iostream> is on more
 dnl   machines (specifically, and irritatingly, <ostream> appears to
 dnl   be missing from egcs-2.91.66)
 AC_CACHE_CHECK([whether standard functions are in namespace std],
-               [ac_cv_standard_funcs_in_std],
-               [AC_TRY_COMPILE([#include <iostream>], [cout << "Hello\n";],
-                               ac_cv_standard_funcs_in_std=no,
-                               [AC_TRY_COMPILE([#include <iostream>],
-                                               [std::cout<<"Hello\n";],
-                                               ac_cv_standard_funcs_in_std=yes,
-                                               ac_cv_standard_funcs_in_std=error)])])
-case $ac_cv_standard_funcs_in_std in
-    yes) AC_DEFINE(HAVE_STD_NAMESPACE, 1,
-                   [Related to HAVE_CSTD_INCLUDE: define as 1 if you have
-                    standard functions in the 'std' namespace; that is, if
-                    you need 'using namespace std' in order to get to them.
-                    At present, we use this flag to decide if we need to
-                    dump everything into the global namespace; this is not
-                    as elegant as I'd like, but it'll do for now.])
-        stdprefix=std
-        ;;
-    no) stdprefix=
-        ;;
-    error) AC_MSG_WARN([I appear to be unable to compile!])
-        ;;
+   [my_cv_stdnamespace],
+   [my_cv_stdnamespace=
+    AC_TRY_COMPILE([#include <iostream>], [std::cout << "Hello\n";],
+        my_cv_stdnamespace=yes,
+       [AC_TRY_COMPILE([#include <iostream>], [cout<<"Hello\n";],
+           my_cv_stdnamespace=no,
+           my_cv_stdnamespace=error)])])
+case $my_cv_stdnamespace in
+  yes)
+    stdprefix=std
+    ;;
+  no)
+    stdprefix=
+    ;;
+  *)
+    AC_MSG_ERROR([cannot compile C++])
+    ;;
 esac
 AC_DEFINE_UNQUOTED(STD,
 	 	   $stdprefix,
-		  [Define as 'std' (no quotes) if standard functions are in 
-		   the std namespace; define as empty otherwise])
+                   [Define as `std' (no quotes) if standard functions are in 
+                    the std namespace; define as empty otherwise])
+
+dnl  The C++ standard specifies that the <cctype> contents are
+dnl  functions in the std namespace, rather than macros.  This means
+dnl  that calling either isalnum() will lose if the compiler is being
+dnl  run in a strict mode, but std::isalnum() will lose if it's being
+dnl  less strict.  So check this case (this behaviour is generally
+dnl  switchable -- for example with option -[no]pure-cname on Tru64,
+dnl  which defines __PURE_CNAME -- but of course that's a poor strategy).
+AC_CACHE_CHECK([whether ctype functions are in std],
+   [my_cv_ctype_in_std],
+   [AC_TRY_COMPILE([#include <cctype>], [bool b=std::isalnum('x');],
+       my_cv_ctype_in_std=yes,
+       my_cv_ctype_in_std=no)])
+if test $my_cv_ctype_in_std = yes; then
+    AC_DEFINE(CCTYPE_IN_STD, 1, 
+       [Define as 1 if, after including <cctype>, the isxxx functions
+        are in the std namespace])
+fi
+
+dnl  The C++ <cstdio> definition does _not_ list snprintf as one of
+dnl  the members, though it is listed in the definition of <stdio.h>
+dnl  in the C standard.  So different compilers seem to have different
+dnl  ideas of where it should be.  Find out.
+AC_CACHE_CHECK([where snprintf is],
+   [my_cv_snprintfns],
+   [my_cv_snprintfns=
+    AC_TRY_COMPILE([
+#include <iostream>
+#if HAVE_CSTD_INCLUDE
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
+],
+	[char s[1]; int x = std::snprintf(s, 1, "");],
+	 my_cv_snprintfns=std,
+	[AC_TRY_COMPILE([
+#include <iostream>
+#if HAVE_CSTD_INCLUDE
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
+],
+	    [char s[1]; int x = ::snprintf(s, 1, "");],
+	     my_cv_snprintfns=global,
+	    [AC_TRY_COMPILE([
+#include <iostream>
+#if HAVE_CSTD_INCLUDE
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
+],
+	        [char s[1]; int x = snprintf(s, 1, "");],
+		 my_cv_snprintfns=nons,
+		 my_cv_snprintfns=broken)])])])
+case $my_cv_snprintfns in
+  std)    nscode=3 ;;
+  global) nscode=2 ;;
+  nons)   nscode=1 ;;
+  *)      nscode=0 ;; # this case shouldn't really happen
+esac
+AC_DEFINE_UNQUOTED(SNPRINTF_NAMESPACE, $nscode,
+  [Define to 3 if snprintf is in the std:: namespace; to 2 if it is in
+   the global namespace; and 1 if it is in no namespace.  Test only if
+   HAVE_SNPRINTF is true.])
+
+dnl  Do we have string clear() method? (it's in the standard, but not
+dnl  every compiler supports it)
+AC_CACHE_CHECK([whether string.clear() is supported],
+   [my_cv_string_clear],
+   [AC_TRY_COMPILE([#include <string>],
+       [STD::string teststring = "hello";
+        teststring.clear();],
+        my_cv_string_clear=yes,
+        my_cv_string_clear=no)])
+if test $my_cv_string_clear = yes; then
+    AC_DEFINE(HAVE_STRING_CLEAR, 1,
+      [Define to 1 if the C++ string.clear() method is supported])
+fi
 
 
 dnl   Extra .lo objects, to be conditionally compiled
@@ -199,24 +333,25 @@ if test -n "$extrapath"; then
     LIBS="$LIBS -L$extrapath/lib"
   fi
   AC_CHECK_HEADER(kpathsea/pathsearch.h,
-                  [AC_CHECK_LIB(kpathsea, kpse_find_file,
-                                [AC_DEFINE(ENABLE_KPATHSEA,
-				 1,
-	[Define as 1 if you want to enable use of the kpathsea library
-	for font-searching.  The font _generation_ programs (usually)
-	use this library when they work their magic, but that's
-	entirely separate, and controlled only by ENABLE_FONT_GEN.])]
-                                dnl EXTRALO="$EXTRALO kpathsea.lo"
-                                EXTRALO="$EXTRALO KarlPathSearcher.lo"
-                                LIBS="$LIBS -lkpathsea"
-                                needfontfinding=0)])
+     [AC_CHECK_LIB(kpathsea, kpse_find_file,
+         [AC_DEFINE(ENABLE_KPATHSEA,
+          1,
+          [Define as 1 if you want to enable use of the
+           kpathsea library for font-searching.  The font
+           _generation_ programs (usually) use this library
+           when they work their magic, but that's entirely
+           separate, and controlled only by ENABLE_FONT_GEN.])]
+          EXTRALO="$EXTRALO KarlPathSearcher.lo"
+          LIBS="$LIBS -lkpathsea"
+          needfontfinding=0)])
 fi
 
 dnl   Specify an alternative, or additional, font-finding script.
 dnl   This should be expressed as a `font-string template', as
 dnl   described in the README
 AC_ARG_WITH(fontfinder,
-[  --with-fontfinder=script  Specify a script to find fonts],
+  AS_HELP_STRING([--with-fontfinder=script],
+                 [Specify a script to find fonts]),
   if test "$withval" != yes -a "$withval" != no; then
     [AC_DEFINE_UNQUOTED(FONT_SEARCH_SCRIPT,
 			"$withval",
@@ -245,7 +380,8 @@ fi
 dnl --disable-texmfcnf
 if test -n "$ac_cv_path_KPSEWHICH"; then
 AC_ARG_ENABLE(texmfcnf,
-[  --disable-texmfcnf      Disable setting of TEXMFCNF in environment],
+  AS_HELP_STRING([--disable-texmfcnf],
+                 [Disable setting of TEXMFCNF in environment]),
   test "$enableval" = "yes" && T=`kpsewhich cnf texmf.cnf`
   if test -n "$T"; then
     AC_DEFINE_UNQUOTED(DEFAULT_TEXMFCNF,
@@ -417,26 +553,31 @@ if test -n "$extrapath"; then
     LIBS="$LIBS -L$extrapath/lib"
   fi
   AC_CHECK_HEADER(png.h,
-                  [AC_CHECK_LIB(png, png_libpng_ver,
-                                [AC_DEFINE(ENABLE_PNG,
-					   1,
-					   [Define as 1 if you want to
-					   enable generation of
-					   PNGs])]
-                                EXTRALO="$EXTRALO PNGBitmap.lo"
-                                LIBS="$LIBS -lpng -lz",
-                                echo "png library not found or too old -- not including PNG support",
-                                -lz)])
+    [AC_CHECK_LIB(png, png_libpng_ver,
+        [AC_DEFINE(ENABLE_PNG,
+                   1,
+                   [Define as 1 if you want to enable generation of PNGs])]
+         EXTRALO="$EXTRALO PNGBitmap.lo"
+         LIBS="$LIBS -lpng -lz",
+        echo "png library not found or too old -- not including PNG support",
+        -lz)])
 fi
 
 dnl   Specify support for GIF output
-AC_ARG_ENABLE(gif, 
-[  --enable-gif            Enable output of GIF files],
-  [AC_DEFINE(ENABLE_GIF,
-	     1,
-	     [Define as 1 if you want to enable generation of GIFs])]
+AC_ARG_ENABLE(gif,
+  AS_HELP_STRING([--enable-gif],
+                 [Enable output of GIF files (default yes)]),
+  [case $enableval in
+     yes) compile_gifs=yes ;;
+     no)  compile_gifs=no ;;
+   esac],
+   compile_gifs=yes)
+if test $compile_gifs = yes; then
+  AC_DEFINE(ENABLE_GIF,
+	    1,
+	    [Define as 1 if you want to enable generation of GIFs])
   EXTRALO="$EXTRALO GIFBitmap.lo"
-  )
+fi
 
 
 dnl   Now check whether getopt and co. are defined.  Do this last,
@@ -488,11 +629,16 @@ AC_ARG_WITH(path-seps,
     test -n "$COLON" && AC_DEFINE_UNQUOTED(SRCHPATH_SEP,'$COLON')
   fi)
 
+
+
 dnl   DOXYGEN_OUTPUT_DIRECTORY is the directory into which Doxygen
 dnl   output will be placed
 AC_SUBST(DOXYGEN_OUTPUT_DIRECTORY)
 DOXYGEN_OUTPUT_DIRECTORY="doc_libdvi2bitmap"
 
-AC_CONFIG_FILES([Makefile test/Makefile doc/Makefile Doxyfile version.h])
+AC_CONFIG_HEADER(config.h)
+AC_CONFIG_FILES([Makefile doc/Makefile test/Makefile
+                 Doxyfile version.h html/index.html dvi2bitmap.1])
+AC_CONFIG_FILES(test/t8.pl, [chmod +x test/t8.pl])
 AC_OUTPUT
 

@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: KarlPathSearcher.cc,v 1.3 2004/11/04 20:32:28 nxg Exp $
 
 
 #include <config.h>
@@ -41,9 +41,7 @@
 #include <stdlib.h>
 #endif
 
-#ifdef HAVE_STD_NAMESPACE
-using std::cerr;
-#endif
+using STD::cerr;
 
 #include <KarlPathSearcher.h>
 #include <PkFont.h>		// for PkFont::dpiBase

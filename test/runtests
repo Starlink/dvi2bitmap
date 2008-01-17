@@ -1,6 +1,6 @@
 #! /bin/sh -
 #
-# $Id$
+# $Id: runtests,v 1.1 2001/05/23 16:56:40 norman Exp $
 #
 # Run a series of tests on moggy.  The directory contains a collection
 # of scripts named `t<number>', and these are executed in turn and their

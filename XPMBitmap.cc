@@ -21,7 +21,7 @@
 //    The General Public License is distributed along with this
 //    program in the file LICENCE.
 //
-//    $Id$
+//    $Id: XPMBitmap.cc,v 1.6 2005/06/04 15:51:04 normang Exp $
 
 // XPMBitmap contributed by Yamabe Kazuharu <tako_da@qc4.so-net.ne.jp>
 //
@@ -37,11 +37,14 @@
 //#include <iostream>		// debug code writes to cerr
 
 #ifdef HAVE_CSTD_INCLUDE
-#include <cstdio>
-#include <cctype>
+#  include <cstdio>
+#  include <cctype>
+#  if CCTYPE_IN_STD
+   using std::isalnum;
+#  endif
 #else
-#include <stdio.h>
-#include <ctype.h>
+#  include <stdio.h>
+#  include <ctype.h>
 #endif
 
 XPMBitmap::XPMBitmap (const int w, const int h)
