@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: PNGBitmap.cc,v 1.23 2005/12/08 09:29:41 normang Exp $
 
 
 #include <config.h>
@@ -258,7 +258,7 @@ void PNGBitmap::write (const string filename)
 			= bg_.blue  + iround(rat*diffblue);
 		}
 	    }
-	    if (verbosity_ > normal)
+	    if (verbosity_ > debug)
 	    {
 		cerr << "Allocated palette for bitdepth " << bpp_
 		     << "...\n";
@@ -375,15 +375,13 @@ void PNGBitmap::write (const string filename)
 	png_set_shift (png_ptr_, &sigbit);
     }
 
-    // Invert mono, so black is one and white is zero
-    //if (bpp_ == 1)
-    //png_set_invert_mono (png_ptr_);
-	
-    
     // Now write the image.  png_write_image requires an array of
     // pointers to rows in the bitmap.  Create this here, possibly
-    // after (re)allocating the array.
-    static const Byte **rows;
+    // after (re)allocating the array.  The RowPointer typedef is here
+    // partly to document the intention, but also because some
+    // compilers (legitimately?) object to `new (const Byte*)[rows_alloc]'.
+    typedef const Byte* RowPointer;
+    static RowPointer *rows;
     static int rows_alloc = -1;	// rely on this being initialised
 				// negative, and specifically less
 				// than any h_
@@ -396,7 +394,7 @@ void PNGBitmap::write (const string filename)
 	// that the allocated space grows gracefully).
 	for (rows_alloc = 1; rows_alloc < h_; rows_alloc *= 2)
 	    ;
-	rows = new const Byte*[rows_alloc];
+	rows = new RowPointer[rows_alloc];
 	if (verbosity_ > normal)
 	    cerr << "PNGBitmap: allocated " << rows_alloc
 		 << "(" << h_ << ") row elements\n";
@@ -416,7 +414,7 @@ void PNGBitmap::write (const string filename)
 }
 					    
 void PNGBitmap::png_error_fn (png_structp png_ptr,
-				     png_const_charp error_msg)
+                              png_const_charp error_msg)
 {
     string err = "PNG error ";
     err.append(error_msg);

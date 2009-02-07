@@ -22,11 +22,11 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: dvi2bitmap.cc,v 1.104 2006/10/26 15:05:50 normang Exp $
 
 
 static const char RCSID[] =
-	"$Id$";
+	"$Id: dvi2bitmap.cc,v 1.104 2006/10/26 15:05:50 normang Exp $";
 
 // FIXME: at several points in the option processing below, I've noted
 // sensible changes to the behaviour.  These, and the corresponding
@@ -46,13 +46,11 @@ static const char RCSID[] =
 #  include <cstdlib>
 #  include <cstdarg>
 #  include <cassert>
-#  include <cstring>
 #else
 #  include <stdio.h>		// for vsprintf
 #  include <stdlib.h>
 #  include <stdarg.h>
 #  include <assert.h>
-#  include <string.h>
 #endif
 
 #include <bitset>
@@ -108,7 +106,7 @@ static string get_ofn_pattern (string dviname);
 static bool valid_ofile_pattern (string& patt);
 static bool parse_boolean_string(char *s, bool *ok=0);
 static void Usage (const char*);
-static void Usage (string msg);
+//static void Usage (string msg);
 static void Usage (bool);
 static void show_help();
 static char *progname;
@@ -212,8 +210,6 @@ int main (int argc, char **argv)
 			  new string(version_string));
     BitmapImage::setInfo (BitmapImage::FURTHERINFO,
 			  new string (DVI2BITMAPURL));
-
-    bool absCrop = false;
 
     while ((optch = getopt_long(argc, argv, short_options, long_options, 0))
 	   != -1) {
@@ -382,13 +378,31 @@ int main (int argc, char **argv)
 
 	  case 'g':		// --debug
 	    {
+                // !!! Additions/changes here should be mirrored
+                // in show_help() below
 		char *o = optarg;
 		verbosities debuglevel = debug;
 		for (; *o != '\0'; ++o) {
 		    switch (*o)
 		    {
+		      case 'b': // debug bitmap
+			Bitmap::verbosity(debuglevel);
+			BitmapImage::verbosity(debuglevel);
+                        // following is used only within Bitmap.cc
+                        DviFilePosition::verbosity(debuglevel);
+			break;
 		      case 'd': // debug DVI file
 			DviFile::verbosity(debuglevel);
+			break;
+		      case 'g':
+			if (debuglevel == debug)
+			    debuglevel = everything;
+			break;
+		      case 'i': // debug input
+			InputByteStream::verbosity(debuglevel);
+			break;
+		      case 'm': // debug main program
+			verbosity = debuglevel;
 			break;
 		      case 'p': // debug PK file (and kpathsea)
 			PkFont::verbosity(debuglevel);
@@ -396,25 +410,17 @@ int main (int argc, char **argv)
 		      case 'r': // debug rasterdata parsing
 			PkRasterdata::verbosity(debuglevel);
 			break;
-		      case 'i': // debug input
-			InputByteStream::verbosity(debuglevel);
-			break;
-		      case 'b': // debug bitmap
-			Bitmap::verbosity(debuglevel);
-			BitmapImage::verbosity(debuglevel);
-			break;
-		      case 'm': // debug main program
-			verbosity = debuglevel;
-			break;
 		      case 'u': // debug utility functions
 			Util::verbosity(debuglevel);
 			break;
-		      case 'g':
-			if (debuglevel == debug)
-			    debuglevel = everything;
-			break;
 		      default:
-			Usage("bad flag for --debug");
+                        {
+                            char fmt[] = "bad flag (%c) for --debug";
+                            char buf[sizeof(fmt)];
+                            STD::sprintf(buf, fmt, *o);
+                            Usage(buf);
+                            break;
+                        }
 		    }
 		}
 	    }
@@ -471,7 +477,6 @@ int main (int argc, char **argv)
 		    (char*)"types",
 		    NULL
 		};
-		int cropmargin;
 		while (*options) {
 		    int suboptch = getsubopt(&options, tokens, &value);
 		    if (value)	// no values
@@ -572,8 +577,6 @@ int main (int argc, char **argv)
 		char *tokens[] = {
 		    (char*)"foreground", (char*)"background", NULL
 		};
-		int cropmargin;
-		char c;
 		while (*options) {
 		    int fb = getsubopt(&options, tokens, &value);
 		    Bitmap::BitmapColour rgb;
@@ -733,7 +736,6 @@ int main (int argc, char **argv)
 		    (char*)"options",		// 12
 		    NULL
 		};
-		int cropmargin;
 		while (*options) {
 		    int suboptch = getsubopt(&options, tokens, &value);
 		    if (value)	// no values
@@ -804,7 +806,7 @@ int main (int argc, char **argv)
     }
     
     if (processing_.none())
-	exit (0);
+	STD::exit (0);
 
     argc -= optind;
     argv += optind;
@@ -827,7 +829,7 @@ int main (int argc, char **argv)
 	if (verbosity > silent)
 	    cerr << "Error: Can't make output filename pattern from "
 		 << dviname << endl;
-	exit(1);
+	STD::exit(1);
     }
 
     bool fonts_ok = true;	// are there accumulated font errors?
@@ -841,7 +843,7 @@ int main (int argc, char **argv)
 	    if (verbosity > silent)
 		cerr << "Error: Can't open file " << dviname
 		     << " to read" << endl;
-	    exit(1);
+	    STD::exit(1);
 	}
 
 	bool all_fonts_present = true; // are all expected fonts found?
@@ -963,7 +965,7 @@ int main (int argc, char **argv)
     // exit zero/success if (a) we were processing the DVI
     // file normally and we found at least one font, or (b) we were
     // just checking the preamble and we found _all_ the fonts.
-    exit(fonts_ok ? 0 : 1);
+    STD::exit(fonts_ok ? 0 : 1);
 }
 
 void process_dvi_file (DviFile *dvif, bitmap_info& b, int fileResolution,
@@ -1173,10 +1175,8 @@ void process_dvi_file (DviFile *dvif, bitmap_info& b, int fileResolution,
 		    curr_font = f;
 	    }
 	    // curr_font unchanged if font-change was unsuccessful
-	}
-	else if (DviFileSpecial* test =
-		 dynamic_cast<DviFileSpecial*>(ev))
-	{
+	} else if (DviFileSpecial* test =
+                   dynamic_cast<DviFileSpecial*>(ev)) {
 	    DviFileSpecial& special = *test;
 	    if (!process_special (dvif,
 				  special.specialString,
@@ -1185,10 +1185,12 @@ void process_dvi_file (DviFile *dvif, bitmap_info& b, int fileResolution,
 		    cerr << "Warning: unrecognised special: "
 			 << special.specialString
 			 << endl;
-	}
-	else if (DviFilePostamble *post
-		 = dynamic_cast<DviFilePostamble*>(ev))
+	} else if (DviFilePostamble *post
+                   = dynamic_cast<DviFilePostamble*>(ev)) {
+            if (verbosity >= debug)
+                post->debug();
 	    end_of_file = true;
+        }
 
 	ev->release();
     }
@@ -1239,7 +1241,7 @@ bool process_special (DviFile *dvif, string specialString,
                         bool seenPageCount = false; // seen %d or #
                         b.ofile_pattern = "";
                         int imax = s->length()-1;
-                        for (unsigned int i=0; i<=imax; i++) {
+                        for (int i=0; i<=imax; i++) {
                             char c = (*s)[i];
                             if (seenPageCount) {
                                 if (c == '%')
@@ -1415,10 +1417,6 @@ bool process_special (DviFile *dvif, string specialString,
 			stringOK = false;
 			break;
 		    }
-		    double x = DviFile::convertUnits(STD::strtod(s->c_str(),0),
-						     special_unit,
-						     DviFile::unit_pixels,
-						     dvif);
 		    strut_lrtb[i] = static_cast<int>
 			    (DviFile::convertUnits(STD::strtod(s->c_str(),0),
 						   special_unit,
@@ -1463,10 +1461,13 @@ bool process_special (DviFile *dvif, string specialString,
             } else if (*s == "mark") {
                 // Set the mark at the current position.  This must
                 // match the offset calculations we make when setting
-                // characters handling DviFileSetChar event above.
+                // characters while handling DviFileSetChar event above.
                 bitmap->mark
-                    (dvif->currH(DviFile::unit_pixels) + oneInch,
-                     dvif->currV(DviFile::unit_pixels) + oneInch);
+                    (new DviFilePosition
+                     (dvif,
+                      dvif->currH(DviFile::unit_pixels) + oneInch,
+                      dvif->currV(DviFile::unit_pixels) + oneInch,
+                      DviFile::unit_pixels));
                 
 	    } else
 		stringOK = false;
@@ -1607,7 +1608,7 @@ void show_help()
 "                                 RGB spec, as red/blue/green or #rrggbb",
 "  --crop=[left|right|top|bottom|all]=n   Specify margin round output bitmap",
 "  --crop=[absolute|relative]     Specify cropping of bitmap",
-"  --debug=[dpribmg]              Trace execution",
+"  --debug=[flags]                Trace execution (see below)",
 "  --font-search=[path|command|kpathsea]=value",
 "  --font-search=[nopath|nocommand|nokpathsea|none]",
 "                                 Control font-searching",
@@ -1633,17 +1634,19 @@ void show_help()
 "  --scaledown=n                  Scale output bitmap down by n",
 "  --verbose=[normal|quiet|silent] Suppress chatter",
 "  -V, --version                  Show version and configuration info",
+"  (debug flags: b=bitmap, d=DVI file, g=everything, i=input, m=main",
+"                p=fonts and kpse, r=rasterdata, u=utilities)",
     };
     int nstrings = sizeof(helpstrings)/sizeof(helpstrings[0]);
     for (int i=0; i<nstrings; i++)
 	cerr << helpstrings[i] << endl;
 }
 
-void Usage (string msg)
-{
-    cerr << "Error: " << msg << endl;
-    Usage(true);
-}
+// void Usage (string msg)
+// {
+//     cerr << "Error: " << msg << endl;
+//     Usage(true);
+// }
 void Usage (const char* msg)
 {
     cerr << "Error: " << msg << endl;
@@ -1682,5 +1685,5 @@ void Usage (bool andExit)
 "  -P   Processing: b=blur bitmap, t=set transparent, c=do cropping (BTC->off)" << endl;
 #endif
     if (andExit)
-        exit (1);
+        STD::exit (1);
 }

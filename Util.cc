@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: Util.cc,v 1.16 2005/06/04 15:51:04 normang Exp $
 
 
 #include <config.h>
@@ -33,8 +33,6 @@
 #  include <cstdio>
 #  include <cctype>
 #  include <cctype>
-#  include <cstring>
-#  include <cstdlib>
 #  if CCTYPE_IN_STD
 using std::isspace;
 using std::isxdigit;
@@ -43,8 +41,6 @@ using std::isxdigit;
 #  include <stdio.h>
 #  include <ctype.h>
 #  include <ctype.h>
-#  include <cstring.h>
-#  include <stdlib.h>
 #endif
 #include <unistd.h>		// this is standard according to single-unix, 
 				// how POSIXy is that?  How C++?

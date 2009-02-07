@@ -1,9 +1,26 @@
+<subsect id="rn-0.14b1" export="export">
+<subhead>
+<title>Release 0.14b1</title>
+</subhead>
+<p>The handling of the `mark' special should now work in more/all
+  cases, along with handling of bitmap crops.  Fixed at least one
+  off-by-one (-like) error reported by Guillaume Melquiond.</p>
+</subsect>
+
 <subsect id="rn-0.13" export="export">
+<subhead>
+<title>Release 0.13</title>
+</subhead>
+<p>No changes from 0.13b3</p>
+</subsect>
+
+<subsect id="rn-0.13b3" export="export">
   <subhead>
-    <title>Release 0.13</title>
+    <title>Release 0.13b3</title>
   </subhead>
 
   <p>No functionality changes</p>
+  <p>Small bug-fixes, from beta-testers</p>
   <p>A couple of configuration fixes, for portability.  The configure option
     <code>--enable-gif</code> is now the default.</p>
 </subsect>
@@ -15,7 +32,7 @@
 
   <p>There are no significant functionality changes from 0.12-2.
     However the build system
-    changed significantly when the repository was relocated, and
+    changed significantly when the repository was relocated to sourceforge, and
     this warrants a new minor version, since the required changes,
     though they should be leaving the functionality unchanged, are
     more than just bugfixes.</p>

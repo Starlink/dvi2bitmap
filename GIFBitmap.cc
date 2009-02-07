@@ -2,7 +2,7 @@
 /*
  * GIFEncode.cc - GIF image compression interface.
  *
- * $Id$
+ * $Id: GIFBitmap.cc,v 1.21 2004/11/04 20:32:28 nxg Exp $
  *
  * This file is based on ppmtogif.c program which is part of the
  * pbmplus distribution.

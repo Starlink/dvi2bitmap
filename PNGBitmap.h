@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: PNGBitmap.h,v 1.11 2003/02/17 16:11:29 norman Exp $
 
 
 #ifndef PNGBITMAP_HEADER_READ

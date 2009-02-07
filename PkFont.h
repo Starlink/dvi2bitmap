@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: PkFont.h,v 1.49 2003/10/03 13:26:13 norman Exp $
 
 
 #ifndef PK_FONT_HEADER_READ

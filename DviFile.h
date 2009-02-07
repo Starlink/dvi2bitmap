@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: DviFile.h,v 1.62 2005/12/08 09:33:45 normang Exp $
 
 
 #ifndef DVI_FILE_HEADER_READ
@@ -220,15 +220,15 @@ public:
     int vSize();
     static double convertFromScaledPoints(int sp, DviUnits units,
 					  DviFile *dvif=0)
-	    throw (DviError);
-    static double convertToScaledPoints(double length, DviUnits units,
-					DviFile *dvif=0)
-	    throw (DviError);
+        throw (DviError);
+    static int convertToScaledPoints(double length, DviUnits units,
+                                     DviFile *dvif=0)
+        throw (DviError);
     static double convertUnits(double length,
 			       DviUnits from_units,
 			       DviUnits to_units,
 			       DviFile *dvif=0)
-	    throw (DviError);
+        throw (DviError);
     static verbosities verbosity(const verbosities level);
     /**
      * Return the net magnification factor for the DVI file

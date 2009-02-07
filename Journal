@@ -1,4 +1,65 @@
 
+Sourceforge
+-----------
+
+Moved to sourceforge at the beginning of 2005, between 0.13b2 and
+0.13b3.  See dvi2bitmap.sourceforge.net.  Released 0.13b3 from there.
+
+Tagged dvi2bitmap-0-13 on 2005 August 19, and released it.
+
+To make a release:
+
+  * Update configure.ac, html/index.html.in, doc/ssn71.xml (in
+    particular the <distribution> elements if this is a release of a
+    new minor version, rather than a beta).
+
+  * Tag the repository appropriately.
+
+  * Build the release:
+
+    % cvs -d :ext:normang@cvs.sourceforge.net:/cvsroot/dvi2bitmap \
+        export -r dvi2bitmap-0-13 dvi2bitmap
+    % cd dvi2bitmap
+    % use config-tools doxygen
+    # currently uses automake 1.9.6, autoconf 2.59, libtool 1.5.18
+    % ./bootstrap
+    % ./configure \
+        --with-sgmldir=/Volumes/Boltzmann/Starlink/trunk/STAR/lib/sgmlkit \
+        --with-png=/opt/local
+    % make
+    % make check
+    % make dist
+    % make webpage-tarball.tar.gz
+
+Then:
+
+  * Go to <https://sourceforge.net/projects/dvi2bitmap/>, and the
+    project admin pages.
+  * Upload the release tarball to ftp://upload.sourceforge.net/incoming .
+  * Click on `File releases', then on `Add release' at the bottom.
+  * Add a `New release name' like dvi2bitmap-0.13, and work through
+    this form.
+  * Upload the documentation (see below).
+  * Mail dvi2bitmap-users@lists.sourceforge.net.
+  * Potentially upload it to CTAN as well: www.tex.ac.uk/upload.html
+
+See documentation at <https://sourceforge.net/docman/display_doc.php?docid=6445&group_id=1#filereleasesteps>
+
+To update the web pages:
+
+    % make webpage-tarball.tar.gz
+    % scp webpage-tarball.tar.gz normang@shell.sourceforge.net:.
+    % ssh normang@shell.sourceforge.net
+    sourceforge:normang> cd /home/groups/d/dv/dvi2bitmap/htdocs
+    sourceforge:htdocs> rm -Rf *; tar xzf ~/webpage-tarball.tar.gz
+    sourceforge:htdocs> rm ~/webpage-tarball.tar.gz
+    sourceforge:htdocs> ^D
+    %
+
+
+automake/autoconf
+-----------------
+
 From 0.11, uses autoconf/automake.  Needs autoconf better than 2.50
 (I think -- the first one after this which I've used is 2.57)
 

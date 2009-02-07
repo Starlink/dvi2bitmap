@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: KarlPathSearcher.cc,v 1.3 2004/11/04 20:32:28 nxg Exp $
 
 
 #include <config.h>

@@ -1,3 +1,32 @@
+2005-12-08  Norman Gray  <norman@astro.gla.ac.uk>
+
+	* Bitmap.cc, Bitmap.h, DviFilePosition.cc, DviFilePosition.h, test/t8.pl.in:  the
+	cropping and scaledown code now works (I think), and is a bit less tangled.
+
+2005-12-04  Norman Gray  <norman@astro.gla.ac.uk>
+
+	* Bitmap.cc (scaleDown): Fix off-by-one-like error when
+	scaling down bitmaps (report and patch from Guillaume Melquiond).
+	Added a few code tidyups nearby this, hopefully simplifying.
+
+2005-08-19  Norman Gray  <norman@astro.gla.ac.uk>
+
+	* configure.ac: Update version number -- release 0.13
+
+2005-6-19  Norman Gray  <norman@astro.gla.ac.uk>
+
+	* Release 0.13b3
+
+2005-06-04  Norman Gray  <norman@astro.gla.ac.uk>
+
+	* Bitmap.cc ChangeLog DviError.cc DviFile.cc FileByteStream.cc
+	InputByteStream.cc Makefile.am PageRange.cc PipeStream.cc
+	PkFont.cc Util.cc XBMBitmap.cc XPMBitmap.cc bootstrap
+	component.xml configure.ac dvi2bitmap.cc dvireport.cc
+	doc/Makefile.am test/Makefile.am test/t1.cc test/t6.cc test/t7.cc
+	test/t8.pl.in component.xml.in: applied the fixes made to the
+	Starlink version since importing to sourceforge.
+
 2005-02-04  Norman Gray  <norman@astro.gla.ac.uk>
 
 	* all: make sure that it builds on Tru64 with

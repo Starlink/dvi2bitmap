@@ -23,7 +23,7 @@
  *    program in the file LICENCE.
  *
  *    Author: Norman Gray <norman@astro.gla.ac.uk>
- *    $Id$
+ *    $Id: InputByteStream.h,v 1.28 2004/11/04 20:32:28 nxg Exp $
  */
 
 

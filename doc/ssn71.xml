@@ -90,11 +90,15 @@
         date="20-Dec-2003" author="ng" versionid="v0-12"><px>Significant
           refactoring of library, and addition of
           functionality.</px></distribution>
+     <distribution string="0.13"
+        date="19-Aug-2005" author='ng' versionid='v0-13'><px>Minor
+          portability changes.  Sources relocated to
+          sourceforge.</px></distribution>
     </history>
 
     <copyright>
-      <p>Copyright 1999--2003, Council for the Central Laboratory of
-        the Research Councils.</p>
+      <p>Copyright 1999--2005, Council for the Central Laboratory of
+        the Research Councils.  Copyright 2005, Norman Gray.</p>
     </copyright>
 
   </docinfo>
@@ -330,14 +334,19 @@ $E=mc^2$
             <dt id="usage.options.g"><code>-g, --debug=[spec]</code></dt>
             <dd>
               <p>Switch on debugging.  The <code>[spec]</code> is a
-                list of letters indicating what to debug, as follows.
-                You may trace DVI file parsing (`d'), PK file parsing
-                (`p'), font rasterdata parsing (`r'), input (`i'),
-                bitmap generation (`b') or the main program (`m').
-                Adding an extra `g' increases still further the amount
-                of debugging code.  The debugging information may be
-                uninformative or unintelligible; it might even crash
-                the program (mention that to me).</p>
+              list of letters indicating what to debug, as follows.
+              You may trace bitmap generation (`b'), DVI file parsing
+              (`d'), input (`i'), the main program (`m'), PK file
+              searching and parsing (`p'), font rasterdata parsing
+              (`r'), or various utility functions (`u', though this is
+              actually only useful for the maintainer).  If kpathsea
+              is compiled in, then debugging PK files switches on
+              kpathsea debugging also.  Adding an extra `g' at the
+              beginning of the spec increases
+              still further the amount of debugging code.  The
+              debugging information may be uninformative or
+              unintelligible; it might even crash the program (mention
+              that to me).</p>
 
             </dd>
 

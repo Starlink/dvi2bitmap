@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: PipeStream.cc,v 1.16 2006/10/26 15:03:59 normang Exp $
 
 
 #include <config.h>
@@ -34,16 +34,12 @@
 
 #ifdef HAVE_CSTD_INCLUDE
 #  include <cstdio>
-#  include <cstdlib>
 #  include <cctype>
 #  include <cerrno>
-#  include <cstring>
 #else
 #  include <stdio.h>
-#  include <stdlib.h>
 #  include <ctype.h>
 #  include <errno.h>
-#  include <string.h>
 #endif
 
 // the assert headers appear to be slightly less predictable...
@@ -375,19 +371,37 @@ void PipeStream::close(void)
 }
 
 /**
- * Returns the status of the command at the end of the pipe.  Since
+ * Returns the exit status of the command at the end of the pipe.  Since
  * this is only available after the process has completed, this 
  * invokes {@link #close} on the stream first.  Thus you should not
  * invoke this method until after you have extracted all of the
  * command's output that you want.  If <code>close</code> is unable
  * to terminate the process for some reason, this returns -1.
  *
+ * <p>If the process exited normally, return the exit status of the command,
+ * as opposed to the raw exit status returned from the process, since this is
+ * more useful than the raw status with assorted other status information
+ * concerning anomalous exits.  This status is non-negative.  If the process
+ * did not exit normally, then return the negative of the raw status
+ * information, which we assert will be less than zero.
+ *
+ * <p>See waitpid(2) for details.
+ *
  * @return the exit status of the process.
  */
 int PipeStream::getTerminationStatus(void)
 {
+    int retval;
+
     close();
-    return pipe_status_;
+    if (WIFEXITED(pipe_status_)) {
+        retval = WEXITSTATUS(pipe_status_);
+        assert(retval >= 0);
+    } else {
+        retval = -pipe_status_;
+        assert(retval < 0);     // we are correct about this, aren't we?
+    }
+    return retval;
 }
 
 /**

@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: DviFile.cc,v 1.72 2005/12/08 09:34:21 normang Exp $
 
 
 #include <config.h>
@@ -36,7 +36,6 @@
 #endif
 
 #ifdef HAVE_CSTD_INCLUDE
-#  include <cstdlib>
 #  include <cmath>		// for fabs()
 #  include <cassert>
 #  include <cctype>		// for isprint
@@ -44,7 +43,6 @@
 using std::isprint;
 #  endif
 #else
-#  include <stdlib.h>
 #  include <math.h>
 #  include <assert.h>
 #  include <ctype.h>
@@ -772,7 +770,7 @@ int DviFile::pixel_round(int dp)
  * <p>The conversions to DVIunits and pixels are not universal, but
  * are instead dependent on a particular DVI file; if you wish to
  * convert to either of these units, you must supply a reference to a
- * DVI file.  If not, and argument here is ignored, and may be zero
+ * DVI file.  If not, any argument here is ignored, and may be zero
  * (the default).
  *
  * @param sp the length in scaled points
@@ -846,7 +844,7 @@ double DviFile::convertFromScaledPoints(int sp, DviUnits units, DviFile *dvif)
  * <p>The conversions from DVIunits and pixels are not universal, but
  * are instead dependent on a particular DVI file; if you wish to
  * convert from either of these units, you must supply a reference to a
- * DVI file.  If not, and argument here is ignored, and may be zero
+ * DVI file.  If not, any argument here is ignored, and may be zero
  * (the default).
  *
  * @param length the length to be converted
@@ -860,8 +858,8 @@ double DviFile::convertFromScaledPoints(int sp, DviUnits units, DviFile *dvif)
  * @see #convertFromScaledPoints
  * @see #convertUnits
  */
-double DviFile::convertToScaledPoints(double length, DviUnits units,
-				      DviFile *dvif)
+int DviFile::convertToScaledPoints(double length, DviUnits units,
+                                   DviFile *dvif)
     throw (DviError)
 {
     double ans;
@@ -910,7 +908,7 @@ double DviFile::convertToScaledPoints(double length, DviUnits units,
       default:
 	assert(false);
     }
-    return ans;
+    return static_cast<int>(ans+0.5);
 }
 
 /**
@@ -919,7 +917,7 @@ double DviFile::convertToScaledPoints(double length, DviUnits units,
  * <p>The conversions to DVIunits and pixels are not universal, but
  * are instead dependent on a particular DVI file; if you wish to
  * convert to either of these units, you must supply a reference to a
- * DVI file.  If not, and argument here is ignored, and may be zero
+ * DVI file.  If not, any argument here is ignored, and may be zero
  * (the default).
  *
  * @param length the length to be converted
@@ -944,9 +942,7 @@ double DviFile::convertUnits(double length,
 	return length;
     else
 	return convertFromScaledPoints
-		(static_cast<int>(convertToScaledPoints(length,
-							from_units,
-							dvif)),
+		(convertToScaledPoints(length, from_units, dvif),
 		 to_units,
 		 dvif);
 }

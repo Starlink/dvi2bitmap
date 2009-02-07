@@ -21,7 +21,7 @@
 //    The General Public License is distributed along with this
 //    program in the file LICENCE.
 //
-//    $Id$
+//    $Id: XPMBitmap.h,v 1.3 2003/02/16 21:48:06 norman Exp $
 
 // XPMBitmap contributed by Yamabe Kazuharu <tako_da@qc4.so-net.ne.jp>
 

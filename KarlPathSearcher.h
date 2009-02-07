@@ -23,7 +23,7 @@
  *    program in the file LICENCE.
  *
  *    Author: Norman Gray <norman@astro.gla.ac.uk>
- *    $Id$
+ *    $Id: KarlPathSearcher.h,v 1.1 2003/08/03 21:54:47 norman Exp $
  */
 
 /* This is merely an interface to the kpathsea library */

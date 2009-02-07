@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: FileByteStream.cc,v 1.9 2005/06/04 15:51:04 normang Exp $
 
 
 #include <config.h>

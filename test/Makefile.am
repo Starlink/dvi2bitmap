@@ -3,8 +3,6 @@
 # Makefile for the test directory
 #
 # - The test of hello.dvi is the basic test of dvi2bitmap
-# - magtest.tex is a test of whether dvi2bitmap correctly processes DVI
-#   and font magnification.
 # - modetest.tex is more of a test of the Metafont modes than one of
 #   dvi2bitmap, but it does exercise a range of fonts, and so can show
 #   some weaknesses.
@@ -32,7 +30,7 @@ check_PROGRAMS = $(TESTS)
 t5_test_LDFLAGS = -lm
 t7_test_LDFLAGS = -lm
 LDADD = ../libdvi2bitmap.la
-CPPFLAGS = -I..
+AM_CPPFLAGS = -I..
 t1_test_SOURCES = t1.cc
 t2_test_SOURCES = t2.cc
 t3_test_SOURCES = t3.cc
@@ -44,9 +42,9 @@ t8_test_SOURCES = t8.pl
 # t8.test is a perl script -- see below
 
 # t8.test is just a link to t8.pl.
-t8.test: t8.pl
+t8.test$(EXEEXT): t8.pl
 	if test -w t8.test; then rm -f t8.test;fi
-	$(LN_S) t8.pl t8.test
+	$(LN_S) t8.pl t8.test$(EXEEXT)
 
 # Test 5 depends on its DVI file; test 7 uses it, too
 t5.test$(EXEEXT) t7.test$(EXEEXT): t5.dvi
@@ -67,8 +65,8 @@ t6.test$(EXEEXT): t6.o
 pathtest: hello.dvi
 	sh ./test-font-gen.sh $(DVI2BITMAP) hello.dvi temp-hello-output
 
-magtest: magtest.dvi
-	sh ./test-font-gen.sh $(DVI2BITMAP) magtest.dvi temp-magtest-output
+#magtest: magtest.dvi
+#	sh ./test-font-gen.sh $(DVI2BITMAP) magtest.dvi temp-magtest-output
 
 modetest: modetest.dvi
 	sh ./test-font-gen.sh $(DVI2BITMAP) modetest.dvi temp-modetest-output
@@ -76,8 +74,8 @@ modetest: modetest.dvi
 hello.dvi: hello.tex
 	tex hello
 
-magtest.dvi: magtest.tex
-	tex magtest
+testcase-magnification.dvi: testcase-magnification.tex
+	tex testcase-magnification
 
 modetest.dvi: modetest.tex
 	latex modetest
@@ -85,33 +83,36 @@ modetest.dvi: modetest.tex
 modetest-maths.dvi: modetest-maths.tex
 	latex modetest-maths
 
-modetest-maths-concmath.dvi: modetest-maths.tex
-	ln -s modetest-maths.tex modetest-maths-concmath.tex
+modetest-maths-concmath.dvi: modetest-maths-concmath.tex
 	latex '\def\optionswitch{1}\input modetest-maths-concmath.tex '
-	rm modetest-maths-concmath.tex
 
+modetest-maths-concmath.tex: modetest-maths.tex
+	ln -s modetest-maths.tex modetest-maths-concmath.tex
+
+# The sampler relies on scsh to be installed
 %-sampler.html: %.dvi
-	./make-sampler.scsh -x$(DVI2BITMAP) -o$(@:.html=) -d$<
+	./make-sampler.scsh -x$(DVI2BITMAP) -o$(@:.html=) -d$< -t$(<:.dvi=.tex)
 
-sampler: sampler.html modetest-sampler.html modetest-maths-sampler.html modetest-maths-concmath-sampler.html
-	test -d sampler || mkdir sampler
-	mv modetest-sampler.html modetest-maths-sampler.html modetest-maths-concmath-sampler.html sampler
-	mv modetest*.png sampler
+sampler.tar: sampler.html \
+		modetest-sampler.html \
+		modetest-maths-sampler.html \
+		modetest-maths-concmath-sampler.html \
+		modetest-maths-concmath.tex
+	rm -Rf sampler
+	mkdir sampler
+	cp modetest-sampler.html modetest-maths-sampler.html modetest-maths-concmath-sampler.html sampler
+	cp modetest*.png sampler
+	cp modetest.tex modetest-maths.tex modetest-maths-concmath.tex sampler
 	cp sampler.html sampler
-
-
+	tar cf $@ sampler
+	rm -Rf sampler
 
 MOSTLYCLEANFILES = \
 	t6.data \
 	*~ *.o *.lo *.test *.stderr \
-	*.log *.aux *.pdf \
+	*.log *.aux *.dvi *.pdf \
 	test-output* temp* \
-	modetest*sampler*
+	modetest*sampler* \
+	modetest-maths-concmath.tex
 
-
-
-## # Things to do, and dependencies to satisfy, before distribution.
-## # Parent Makefile makes `prepare-dist' just before packaging.
-## prepare-dist: t5.dvi
-## 	echo "Test directory prepared for distribution"
-
+CLEANFILES = sampler.tar

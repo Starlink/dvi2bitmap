@@ -1,6 +1,6 @@
 #! /bin/sh -
 #
-# $Id$
+# $Id: slfontgen,v 1.1 2000/06/23 15:36:38 norman Exp $
 #
 # Script with the same interface as MakeTeXPK, which does nothing
 # other than find the first occurrence of either mktexpk or MakeTeXPK

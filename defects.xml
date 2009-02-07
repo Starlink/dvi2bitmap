@@ -8,8 +8,8 @@
 
 <title>dvi2bitmap defects/issues list</title>
 
-<version>$Revision$</version>
-<date>$Date$</date>
+<version>$Revision: 1.13 $</version>
+<date>$Date: 2003/02/19 14:24:15 $</date>
 
 <p>This list contains the current defects/issues list for the
 dvi2bitmap application.  As well as specific deficiencies, these

@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: InputByteStream.cc,v 1.40 2005/06/04 15:51:04 normang Exp $
 
 
 #include <config.h>
@@ -55,10 +55,8 @@
 #endif
 #if HAVE_CSTD_INCLUDE
 #  include <cerrno>
-#  include <cstring>
 #else
 #  include <errno.h>
-#  include <string.h>
 #endif
 
 #include <unistd.h>

@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: stringstream.h,v 1.7 2004/11/04 20:32:28 nxg Exp $
 
 #ifndef STRINGSTREAM_H_LOADED
 #define STRINGSTREAM_H_LOADED 1

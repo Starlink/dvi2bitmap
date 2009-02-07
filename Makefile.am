@@ -13,6 +13,7 @@ D2BHEADERS = \
 	BitmapImage.h \
 	DviError.h \
 	DviFile.h \
+	DviFilePosition.h \
 	InputByteStream.h \
 	FileByteStream.h \
 	PipeStream.h \
@@ -30,6 +31,7 @@ libdvi2bitmap_la_SOURCES = \
 	BitmapImage.cc \
 	DviError.cc \
 	DviFile.cc \
+	DviFilePosition.cc \
 	InputByteStream.cc \
 	FileByteStream.cc \
 	PipeStream.cc \
@@ -59,10 +61,12 @@ dvireport_LDADD = libdvi2bitmap.la
 
 man1_MANS = dvi2bitmap.1 dvireport.1
 
-
+%.gz: %
+	gzip --best --force $<
 
 # Special handling for distribution
-EXTRA_DIST = $(libdocdir) $(man1_MANS) VERSION
+EXTRA_DIST = $(libdocdir) $(man1_MANS) VERSION \
+    doc/dvi2bitmap-docs.tar.gz doc/dvi2bitmap-docs.pdf
 
 # Generate library documentation using Doxygen.
 # If it's not available, just touch a stamp file in the right directory.
@@ -79,6 +83,30 @@ $(libdocdir): Doxyfile
 	  mkdir $(libdocdir); \
 	  echo "No doxygen available -- library documentation not generated" >$(libdocdir)/stamp; \
 	fi
+
+doc/dvi2bitmap-docs.tar.gz: VERSION
+	cd doc; make dvi2bitmap-docs.tar.gz
+doc/dvi2bitmap-docs.pdf: VERSION
+	cd doc; make dvi2bitmap-docs.pdf
+test/sampler.tar:
+	cd test; make sampler.tar
+
+# Tarball of materials for uploading to the webpage
+webpage-tarball.tar: \
+		html/index.html \
+		doc/dvi2bitmap-docs.tar.gz \
+		doc/dvi2bitmap-docs.pdf \
+		test/sampler.tar \
+		$(libdocdir)
+	rm -Rf dvi2bitmap-webpage
+	mkdir dvi2bitmap-webpage
+	cp html/index.html html/style.css doc/dvi2bitmap-docs.pdf \
+		dvi2bitmap-webpage
+	cd dvi2bitmap-webpage; tar xzf ../doc/dvi2bitmap-docs.tar.gz
+	cd dvi2bitmap-webpage; tar xf ../test/sampler.tar
+	pax -r -w $(libdocdir) dvi2bitmap-webpage
+	cd dvi2bitmap-webpage; tar cf ../$@ .
+	rm -Rf dvi2bitmap-webpage
 
 VERSION: configure.ac
 	echo $(VERSION) >VERSION

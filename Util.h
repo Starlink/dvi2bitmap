@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: Util.h,v 1.11 2003/08/06 22:13:11 norman Exp $
 
 #ifndef UTIL_HEADER_READ
 #define UTIL_HEADER_READ 1

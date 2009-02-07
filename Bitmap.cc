@@ -1,5 +1,6 @@
 //    This file is part of dvi2bitmap.
 //    Copyright 1999--2002, Council for the Central Laboratory of the Research Councils
+//    Copyright 2003--5, Norman Gray
 //    
 //    This program is part of the Starlink Software Distribution: see
 //    http://www.starlink.ac.uk 
@@ -22,9 +23,18 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: Bitmap.cc,v 1.52 2006/10/26 15:03:19 normang Exp $
 
-
+// There are problems with the implementation here, of which the most
+// pronounced is the way that cropping and scaling down are muddled
+// together.  Partly, this is because the implementations of these
+// features are not cleanly separated.  Better, I think, would be to
+// have the crop() and scaleDown() methods simply request the
+// corresponding features, leaving the actual transformations to be
+// done immediately before write(), for example.
+//
+// Also attractive (and easier, after that) would be a way to have the
+// crop margins specifiable in a fuller range of units.
 
 #include <config.h>
 
@@ -51,6 +61,7 @@ using STD::endl;
 
 #include "Bitmap.h"
 #include "BitmapImage.h"
+#include "DviFilePosition.h"
 
 // Declare static variables
 verbosities Bitmap::verbosity_ = normal;
@@ -198,7 +209,7 @@ void Bitmap::clear()
     cropMarginAbs[Bottom] = cropMarginAbsDefault[Bottom];
 
     cropped_ = false;
-
+    scaled_ = false;
     frozen_ = false;
     // but don't reset transparent_ or customRGB_
 
@@ -299,7 +310,7 @@ void Bitmap::usesBitmapArea_(const int ulx, const int uly,
  *
  * @param x the pixel in the top-left corner of the new bitmap (coordinate
  * <em>(0,0)</em>) is located at position <em>(x,y)</em> of the master
- * bitmap XXX NO, should be the reference point!!!
+ * bitmap
  * @param y (see parameter <em>x</em>)
  * @param w the width of the new bitmap, in pixels
  * @param h the height of the new bitmap, in pixels
@@ -310,6 +321,11 @@ void Bitmap::paint(const int x, const int y, const int w, const int h,
 		    const Byte *b)
     throw (BitmapError)
 {
+    // At one time I added a note to the documentation of the 'x'
+    // parameter: 'XXX NO, should be the reference point!!!'.  What
+    // does that mean -- I seem to have been rather emphatic about it,
+    // without much explaining it.
+
     // Set to max_colour_ any pixels in the master which are non-zero in the 
     // new bitmap, and crop any parts of the new bitmap
     // falling outside the boundary of the master
@@ -487,20 +503,21 @@ void Bitmap::strut(const int x, const int y,
  * mark coordinates (0,0).  The input coordinates are not restricted
  * to be on the bitmap.
  *
- * @param x the x-coordinate of the mark, increasing to the right
- * @param y the y-coordinate of the mark, increasing downwards
- * @see BitmapMark
+ * @param p a {@link DviFilePosition} representing the marked position
  */
-void Bitmap::mark(const double x, const double y)
+void Bitmap::mark(DviFilePosition* p)
 {
-    // We need to care where the origin of coordinates is, since that
-    // affects how we scale them in scaleDown().
-    if (mark_ == 0)
-        mark_ = new BitmapMark();
-    mark_->x = x;
-    mark_->y = y;
+    // Recall that the origin of the bitmap, as well as the origin of
+    // the DviFilePosition, is in the top-left corner of the
+    // `page'/bitmap, which is not the same as the DVI origin.
+    if (mark_ != 0)
+        delete mark_;
+
+    mark_ = p;
     if (verbosity_ > normal)
-        cerr << "Bitmap::mark " << x << "," << y << endl;
+        cerr << "Bitmap::mark ("
+             << mark_->getX(DviFile::unit_pixels) << ","
+             << mark_->getY(DviFile::unit_pixels) << ")px" << endl;
     return;
 }
 
@@ -512,16 +529,20 @@ void Bitmap::mark(const double x, const double y)
  * deleted, and which may be overwritten.
  * @see #mark
  */
-Bitmap::BitmapMark* Bitmap::getMark()
+DviFilePosition* Bitmap::getMark()
 {
-    static BitmapMark reportMark;
     if (mark_ == 0)
         return 0;
 
+    static DviFilePosition *reportMark;
+    if (reportMark != 0)
+        delete reportMark;
+
     // Report the mark position taking cropping into account
-    reportMark.x = mark_->x - cropL;
-    reportMark.y = mark_->y - cropT;
-    return &reportMark;
+    reportMark = mark_->copy();
+    reportMark->shift(-cropL, -cropT, DviFile::unit_pixels);
+
+    return reportMark;
 }
 
 /**
@@ -564,15 +585,23 @@ void Bitmap::normalizeBB_(int& tL, int& tR, int& tT, int& tB)
 {
     if (!empty())		// do nothing if the bitmap is empty
     {
+        if (verbosity_ > normal)
+            cerr << "Bitmap::normalizeBB: lr:[" << tL << "," << tR << "); tb:["
+                 << tT << ',' << tB << ")";
+
 	if (tL < 0) tL = 0;
 	if (tR > W) tR = W;
 	if (tT < 0) tT = 0;
 	if (tB > H) tB = H;
 
+        if (verbosity_ > normal)
+            cerr << " --> lr:[" << tL << "," << tR << "); tb:["
+                 << tT << ',' << tB << ")" << endl;
+
 	if ((tL >= tR) || (tT >= tB))
 	    // eh?  this is really an assertion failure, I think
 	    throw BitmapError
-		("Bitmap::normalizeBB_: bitmap not empty, but bounds crossed");
+		("Bitmap::normalizeBB_: bitmap not empty, but bounds crossed (have you specified a silly crop?)");
     }
 }
 
@@ -587,6 +616,12 @@ void Bitmap::crop()
     // Not idempotent, since scaleDown() requires to be able to
     // re-call this function after scaling, which will happen only if
     // cropped_ is true.
+
+    if (scaled_)
+        throw BitmapError("crop() called after scaleDown()");
+
+    if (cropped_)
+        return;
 
     if (!frozen_)
 	freeze();
@@ -604,9 +639,11 @@ void Bitmap::crop()
     normalizeBB_(cropL, cropR, cropT, cropB);
 
     if (verbosity_ > normal) {
-	cerr << "Bitmap::crop to width [" << cropL << ',' << cropR
-	     << "), height ["
-	     << cropT << ',' << cropB << ")" << endl;
+	cerr << "Bitmap::crop width [" << bbL << ',' << bbR
+             << "), height [" << bbT << ',' << bbB
+             << ") to width [" << cropL << ',' << cropR
+	     << "), height [" << cropT << ',' << cropB
+             << ")" << endl;
     }
     
     cropped_ = true;
@@ -738,25 +775,25 @@ bool Bitmap::overlaps ()
  * <li>[3] = one more than the coordinate of the bottommost blackened pixel.
  * </ul>
  * Thus <code>[2]-[0]</code> is the number of pixels which the
- * blackened area occupies.  Note that `blackened pixels' here
- * includes those notionally blackened by the <code>strut()</code>
- * method.  If the bitmap has been cropped, this bounding box reflects
- * the crop margins.
+ * blackened area occupies in the horizontal direction.  Note that
+ * `blackened pixels' here includes those notionally blackened by the
+ * <code>{@link #strut}()</code> method.  If the bitmap has been
+ * cropped, this bounding box reflects the crop margins. 
  *
  * <p>The returned array occupies
  * static storage, and is always current as of the last time this
  * method was called.
  *
- * <p>The methods <code>getWidth()</code> and <code>getHeight()</code>
- * return the size of the bitmap irrespective of the bounding box and
- * any cropping.
+ * <p>The methods <code>{@link #getWidth}()</code> and <code>{@link
+ * #getHeight}()</code> return the size of the bitmap irrespective of
+ * the bounding box and any cropping.
  *
  * <p>It is possible for the bounding-box to be bigger than the
  * bitmap, if rules or bitmaps have been painted on the bitmap in such
  * a way that they overlap the boundaries of the bitmap, <em>and</em>
  * if it is called before an explicit or implicit call to
- * <code>freeze()</code>.  This can also be detected by a call to
- * <code>overlaps()</code> before any call to <code>freeze()</code>.
+ * <code>{@link #freeze}()</code>.  This can also be detected by a call to
+ * <code>{@link #overlaps}()</code> before any call to <code>freeze()</code>.
  * It is never bigger than the bitmap after the bitmap is frozen.
  *
  * <p>Note that the order of the four dimensions is <em>not</em> that of
@@ -853,7 +890,7 @@ void Bitmap::scaleDown (const int factor)
     if (!frozen_)
 	freeze();
 
-    if (factor <= 1 || factor > 8) // shome mistake, shurely
+    if (factor < 2 || factor > 8) // shome mistake, shurely
 	throw BitmapError ("out-of-range scale factor - must be in 2..8");
 
     if (empty())		// nothing there - nothing to do
@@ -870,23 +907,50 @@ void Bitmap::scaleDown (const int factor)
     // of the target one.  Take careful account of the `extra' rows
     // and columns on the right/bottom.
 
-    int newbbL = bbL/factor;
-    // complete_bbR is the rightward boundary of the `complete' pixels
-    int complete_bbR = newbbL + (bbR-bbL)/factor;
-    // newbbR is the rightward boundary, taking into account the extra
-    // pixels which don't completely fill the rightmost target pixel.
-    int newbbR = newbbL + (bbR-bbL+(factor-1))/factor;
-    int newbbT = bbT/factor;
-    int complete_bbB = newbbT + (bbB-bbT)/factor;
-    int newbbB = newbbT + (bbB-bbT+(factor-1))/factor;
-    // rem_cols is the number of columns in the (notionally cropped)
-    // original bitmap which contribute to the last column of the scaled
-    // bitmap, or 0 if the original width is exactly divisible by factor.
-    // If rem_cols>0, then newbbR==complete_bbR+1; else newbbR==complete_bbR.
-    int rem_cols = (bbR-bbL)%factor;
-    int rem_rows = (bbB-bbT)%factor;
+    assert(bbL >= 0 && bbT >= 0);
+    assert(bbR >= bbL && bbB >= bbT);
 
-    // make sure there are at least 6 bits-per-pixel, to accomodate 64
+    // oldX represents the boundaries of the region to be scaled down,
+    // after cropping; that is, it will typically, but not
+    // necessarily, be larger than the bounding-box region.
+    int oldL, oldR, oldT, oldB;
+    if (cropped_) {
+        oldL = cropL;
+        oldR = cropR;
+        oldT = cropT;
+        oldB = cropB;
+    } else {
+        oldL = 0;
+        oldR = W;
+        oldT = 0;
+        oldB = H;
+    }
+
+    // newX represents the boundaries of the region this will be
+    // mapped into, which is moved into the top-left corner of the
+    // bitmap.  This maps to a region in the original bitmap which is
+    // an integer number of factor*factor squares in size.  It is no
+    // smaller than the bb region, but might be up to `factor' pixels
+    // larger in horizontal and vertical extent.  The non-square
+    // extent of these rightmost and bottommost border regions is
+    // handled below, in the calculations of rowspan and colspan.
+    int newL = 0;
+    int newR = (oldR-oldL + (factor-1))/factor;
+    int newT = 0;
+    int newB = (oldB-oldT + (factor-1))/factor;
+
+    assert(newL <= newR);
+    assert(newT <= newB);
+
+    // Preserve these new crop sizes
+    if (cropped_) {
+        cropL = newL;
+        cropR = newR;
+        cropT = newT;
+        cropB = newB;
+    }
+
+    // Make sure there are at least 6 bits-per-pixel, to accomodate 64
     // (=8*8) levels of grey.  This is crude, but acceptable as a first-go
     // heuristic
     int newbpp = (bpp_ < 6 ? 6 : bpp_);
@@ -896,26 +960,41 @@ void Bitmap::scaleDown (const int factor)
         /(double)(factor*factor*max_colour_);
 #endif
 
+    // The pixel at (row1,col1) is set to the total of the pixels in the
+    // region X, where X is a square of size factor*factor (except at the
+    // edges of the original bitmap), with its (0,0) pixel located at a point
+    // offset from (oldL,oldT) by integer multiples of factor.
+    //
     // We stay within the region
-    //   (bbL/factor*factor) <= x < bbR
-    //   (bbT/factor*factor) <= y < bbB
-    // and hence do not stray outside the original bitmap,
-    // since bbL and bbT>=0.
-    for (int row1=newbbT; row1<newbbB; row1++)
-    {
-	int rowspan = (row1 < complete_bbB ? factor : rem_rows);
-	for (int col1=newbbL; col1<newbbR; col1++)
-	{
+    //   oldL <= x < oldR
+    //   oldT <= y < oldB
+    // and hence do not stray outside the original bitmap.
+    for (int row1=newT; row1<newB; row1++) {
+        int y = oldT + (row1-newT)*factor;
+        // rowspan is the vertical extent of the region, starting at
+        // (x,y) which is to be scaled into pixel (row1,col1).
+        // rowspan=factor, except when we're processing the incomplete
+        // edge of the original bitmap
+        int rowspan = factor;
+        if (y + rowspan > oldB) {
+            // we would overlap the edge, so shorten the span
+            rowspan = oldB - y;
+        }
+	for (int col1=newL; col1<newR; col1++) {
 	    int tot = 0;
-	    int x=col1*factor;
-	    int y=row1*factor;
+            int x = oldL + (col1-newL)*factor;
 #if !SCALEDOWN_COMPLETE_AVERAGE
 	    int count = 0;
 #endif
-	    int colspan = (col1 < complete_bbR ? factor : rem_cols);
+            // as for rowspan
+            int colspan = factor;
+            if (x + colspan > oldR) {
+                colspan = oldR - x;
+            }
+            assert(oldL <= x && x+colspan <= oldR);
+            assert(oldT <= y && y+rowspan <= oldB);
 	    for (int row2=y; row2<y+rowspan; row2++)
-		for (int col2=x; col2<x+colspan; col2++)
-		{
+		for (int col2=x; col2<x+colspan; col2++) {
 #if !SCALEDOWN_COMPLETE_AVERAGE
 		    count++;
 #endif
@@ -931,28 +1010,27 @@ void Bitmap::scaleDown (const int factor)
 	}
     }
 
-    bbL = newbbL;
-    bbR = newbbR;
-    bbT = newbbT;
-    bbB = newbbB;
-    if (cropped_)
-    {
-	// scale the crop margins as well
-	cropMargin[Left]   = cropMargin[Left]   / factor;
-	cropMargin[Right]  = cropMargin[Right]  / factor;
-	cropMargin[Top]    = cropMargin[Top]    / factor;
-	cropMargin[Bottom] = cropMargin[Bottom] / factor;
-	crop();			// re-crop
+    if (mark_ != 0) {
+        // Scale the mark position, too.  This is easy, since we've
+        // documented that the top-left pixel has coordinates (0,0)
+        mark_->shift(-oldL, -oldT, DviFile::unit_pixels);
+        mark_->scale(1.0/factor);
+        /*
+        DviFilePosition fixedPoint
+            = DviFilePosition(mark_, 0, 0, DviFile::unit_pixels);
+        mark_->scale(1.0/factor, fixedPoint);
+        */
     }
+
+    bbL = newL + static_cast<int>((bbL-oldL+0.5)/factor);
+    bbR = newL + static_cast<int>((bbR-oldL+0.5)/factor);
+    bbT = newT + static_cast<int>((bbT-oldT+0.5)/factor);
+    bbB = newT + static_cast<int>((bbB-oldT+0.5)/factor);
+ 
     bpp_ = newbpp;
     max_colour_ = new_max_colour;
 
-    if (mark_ != 0) {
-        // scale the mark position, too.  This is easy, since we've
-        // documented that the top-left pixel has coordinates (0,0)
-        mark_->x /= factor;
-        mark_->y /= factor;
-    }
+    scaled_ = true;
 
     if (verbosity_ > normal)
 	cerr << "Bitmap::scaleDown: factor=" << factor
@@ -989,6 +1067,7 @@ void Bitmap::write(const string filename, const string format)
     if (verbosity_ > normal)
 	cerr << "Bitmap::write: "
 	     << " cropped=" << cropped_
+             << " scaled_=" << scaled_
 	     << " bbL=" << bbL
 	     << " bbR=" << bbR
 	     << " bbT=" << bbT
@@ -1014,23 +1093,20 @@ void Bitmap::write(const string filename, const string format)
 		 << ".  Trying format "
 		 << deffmt
 		 << " instead" << endl;
-	bi = BitmapImage::newBitmapImage
-	    (deffmt, hsize, vsize, bpp_);
+	bi = BitmapImage::newBitmapImage(deffmt, hsize, vsize, bpp_);
 	if (bi == 0)
-	    throw BitmapError
-		("Bitmap: can't create image with default format");
+	    throw BitmapError("Bitmap: can't create image with default format");
     }
-    if (cropped_)
-    {
+    if (cropped_) {
 	// Do a sanity-check on cropL..cropB, to make sure that we won't
 	// bust the bounds of B[] when writing out.
 	assert (cropT>=0 && cropB<=H && cropL>=0 && cropL<W);
 
 	for (const_iterator it = begin(); it != end(); ++it)
 	    bi->setBitmapRow(*it);
-    }
-    else
+    } else {
 	bi->setBitmap (B);
+    }
     if (verbosity_ > normal)
 	cerr << "Bitmap: transparent=" << transparent_ << endl;
     bi->setTransparent (transparent_);
@@ -1061,27 +1137,35 @@ void Bitmap::write(const string filename, const string format)
     if (logBitmapPrefix_ != 0) {
 	cout << logBitmapPrefix_ << outfilename
 	     << ' ' << hsize << ' ' << vsize;
-        if (mark_ != 0) {
-            BitmapMark *m = getMark();
-	    // Add one to the reported y-coordinate of the mark.  This
+        DviFilePosition *m = getMark();
+        if (m != 0) {
+	    // We add one to the reported y-coordinate of the mark.  This 
 	    // appears ill-motivated, but it's ultimately caused by
 	    // the observation that, though the underlying coordinate
 	    // system has the y-axis pointing downwards, things like
 	    // characters and rules (and to some extent struts) are
 	    // positioned with reference to their bottom-left corner,
 	    // rather than their top-left, and what's actually
-	    // positioned at the specified is the _centre_ of the
+	    // positioned at the specified position is the _centre_ of the
 	    // bottom-left pixel, rather than, really, the corner.
 	    // This has the effect that everything ends up one pixel
 	    // down from where one feels it ought to be.  However,
-	    // this doesn't matter, since we don't actually care
+	    // this doesn't matter, since we don't really much care
 	    // about the absolute position on the bitmap.  This
 	    // apparently gratuitous +1 is the clearest
 	    // manifestation of the asymmetry, but adding it means
 	    // that if, for example, you have a page with only a 10x10
 	    // rule on it, and the mark immediately afterwards, the
 	    // mark is reported as being at (x=10,y=10), rather than (10,9).
-            cout << ' ' << m->x << ' ' << m->y+1;
+            // The point of this mark mechanism is more to give a
+	    // consistent and intelligible reference point, than that
+	    // it be tied to any particular DVI structure.
+            //
+            // Having said that, it might be worth taking a close look
+            // at the DVI standard, and at least noting where rules are
+            // positioned according to that.
+            cout << ' ' << static_cast<int>(m->getX(DviFile::unit_pixels)+0.5)
+                 << ' ' << static_cast<int>(m->getY(DviFile::unit_pixels)+1.5);
         }
         cout << endl;
     }

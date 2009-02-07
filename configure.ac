@@ -1,28 +1,33 @@
 dnl
 dnl   Configure script for dvi2bitmap
 dnl
-dnl   Copyright 1999--2004, Council of the Central Laboratory
+dnl   Copyright 1999--2005, Council of the Central Laboratory
 dnl       of the Research Councils
 dnl   See file LICENCE for conditions.
 
 
-AC_INIT(dvi2bitmap, 0.13b2, norman@astro.gla.ac.uk)
+AC_INIT(dvi2bitmap, 0.14-alpha, norman@astro.gla.ac.uk)
+AC_SUBST(RELEASEDATE, "2005 ???")
 # Version-info specifications.  See SSN/78 for guidelines, and update the table
-# below for ANY change of version number.
+# below for ANY change of version number.  See also the libtool documentation,
+# section `Libtool's versioning system'.
 #
 # Release    libdvi2bitmap.la
 #  0.13b1         1:0:0
 #  0.13b2         1:1:0
-AC_SUBST(libdvi2bitmap_la_version_info, 1:1:0)
+#  0.13b3	  1:2:0
+#  0.13		  1:3:0
+#  0.14b???       1:4:0
+AC_SUBST(libdvi2bitmap_la_version_info, 1:4:0)
+
+
 
 AM_INIT_AUTOMAKE
-AC_REVISION($Revision$)
+AC_REVISION($Revision: 1.40 $)
 
-AC_PREREQ(2.50)
+AC_PREREQ(2.59)
 
 AC_CONFIG_SRCDIR([dvi2bitmap.cc])
-
-STAR_DEFAULTS
 
 dnl   Checks for programs.
 dnl   By giving arguments (CC cxx c++ g++) and (cc gcc egcs), here, we
@@ -34,6 +39,18 @@ dnl   possibly/potentially causes problems.
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_LIBTOOL
+
+dnl dnl   Macro AS_HELP_STRING is defined in 2.59, but not earlier.
+dnl m4_ifdef([AS_HELP_STRING],,m4_define([AS_HELP_STRING],
+dnl [m4_pushdef([AS_Prefix], m4_default([$3], [                          ]))dnl
+dnl m4_pushdef([AS_Prefix_Format],
+dnl            [  %-]m4_eval(m4_len(AS_Prefix) - 3)[s ])dnl [  %-23s ]
+dnl m4_text_wrap([$2], AS_Prefix, m4_format(AS_Prefix_Format, [$1]))dnl
+dnl m4_popdef([AS_Prefix_Format])dnl
+dnl m4_popdef([AS_Prefix])dnl
+dnl ]))
+
+
 
 
 dnl  Use C to compile the AC_CHECK_FUNCS tests (using C++ can cause
@@ -49,15 +66,27 @@ if test "$DOXYGEN" = NO_DOXYGEN; then
     AC_MSG_NOTICE([Couldn't find Doxygen -- I'll just create a stub library document.  Doxygen's good though: you can get it from www.doxygen.org])
 fi
 
-AC_PATH_PROGS(JADE, [openjade jade], jade)
+dnl   The documentation is built using the Starlink SGMLKit, and we
+dnl   need to find this.  We can't do it automatically.  FIXME: this
+dnl   is ugly, but might need a rewrite of the documentation before
+dnl   it can be fixed.
+AC_PATH_PROGS(SGML2DOCS, sgml2docs, NOSGML2DOCS)
+AC_PATH_PROGS(JADE, [openjade jade], NOJADE)
+AC_PATH_PROGS(SGMLNORM, [osgmlnorm sgmlnorm], NOSGMLNORM)
 
 AC_ARG_WITH(sgmldir,
-            AS_HELP_STRING([--with-sgmldir],
-                           [location of the SGML Kit tools]),
-            STARLINK_SGML_DIR=$withval,
-            STARLINK_SGML_DIR=$STARLINK/lib)
+    AS_HELP_STRING([--with-sgmldir],
+                   [location of the SGML Kit tools (maintainer only)]),
+    STARLINK_SGML_DIR=$withval,
+   [if test "$SGML2DOCS" != NOSGML2DOCS; then
+        STARLINK_SGML_DIR=`echo $SGML2DOCS | sed s,/bin/sgmldocs,/lib/sgmlkit,`
+    else
+        STARLINK_SGML_DIR=$STARLINK/lib
+    fi])
 AC_CHECK_FILE([$STARLINK_SGML_DIR/dtd/CATALOG],,[STARLINK_SGML_DIR=/UNKNOWN])
 AC_SUBST(STARLINK_SGML_DIR)
+AC_PATH_PROG(SGML2DOCS, sgml2docs, NOSGML2DOCS,
+    [$STARLINK_SGML_DIR/../../bin:$PATH])
 
 dnl   Checks for header files (note unistd.h and stdlib are
 dnl   automatically checked for, and the corresponding HAVE_ macros
@@ -600,16 +629,6 @@ AC_ARG_WITH(path-seps,
     test -n "$COLON" && AC_DEFINE_UNQUOTED(SRCHPATH_SEP,'$COLON')
   fi)
 
-dnl   Since the sgmlkit component depends on this one, we will lose if we
-dnl   allow the documentation declaration to declare its dependency on
-dnl   the sgmlkit component.  So omit this by default, unless the special
-dnl   --enable-ssn71 option is added.
-AC_ARG_ENABLE(ssn71,
-    AS_HELP_STRING([--enable-ssn71],
-                   [build the documentation (omitted by default)]),
-    [STAR_XML_DOCUMENTATION(ssn71)],
-    [STAR@&t@_XML_DOCUMENTATION=
-     AC_SUBST(STAR@&t@_XML_DOCUMENTATION)])
 
 
 dnl   DOXYGEN_OUTPUT_DIRECTORY is the directory into which Doxygen
@@ -618,8 +637,8 @@ AC_SUBST(DOXYGEN_OUTPUT_DIRECTORY)
 DOXYGEN_OUTPUT_DIRECTORY="doc_libdvi2bitmap"
 
 AC_CONFIG_HEADER(config.h)
-AC_CONFIG_FILES([Makefile doc/Makefile test/Makefile component.xml
-                 Doxyfile version.h])
+AC_CONFIG_FILES([Makefile doc/Makefile test/Makefile
+                 Doxyfile version.h html/index.html dvi2bitmap.1])
 AC_CONFIG_FILES(test/t8.pl, [chmod +x test/t8.pl])
 AC_OUTPUT
 

@@ -22,7 +22,7 @@
 //    program in the file LICENCE.
 //
 //    Author: Norman Gray <norman@astro.gla.ac.uk>
-//    $Id$
+//    $Id: PkFont.cc,v 1.70 2006/10/26 15:05:21 normang Exp $
 
 
 #include <config.h>
@@ -38,11 +38,9 @@
 #ifdef HAVE_CSTD_INCLUDE
 #include <cstring>
 #include <cmath>
-#include <cstdlib>
 #else
 #include <string.h>
 #include <math.h>
-#include <stdlib.h>
 #endif
 
 using STD::cerr;
@@ -375,10 +373,14 @@ bool PkFont::find_font (string& path)
 	delete PS;
 
 	if (verbosity_ > normal)
-	    cerr << "    ...produced <" << font_found << '>' << endl;
+	    cerr << "    ...produced <" << font_found
+                 << "> (status=" << status << ')' << endl;
 
-	//if (font_found.length() > 0)
-	if (status == 0)
+        // Checking the length of the found font seems more reliable than
+        // checking the exit status, since kpsewhich apparently returns a 
+        // non-zero exit status even if it finds the file, which isn't
+        // terribly helpful
+	if (font_found.length() > 0)
 	{
 	    path = font_found;
 	    got_it = true;
@@ -389,6 +391,10 @@ bool PkFont::find_font (string& path)
     {
 	// write font-generation command string to missfont.log
 	string fontgenCmd = fontgenCommand();
+        if (verbosity_ > normal)
+            cerr << "PkFont::find_font: no font found, writing <"
+                 << fontgenCmd << "> to missfont.log" << endl;
+        
 	if (fontgenCmd.length() != 0)
 	{
 	    ofstream missfont;
